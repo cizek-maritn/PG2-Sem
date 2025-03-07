@@ -1,3 +1,0 @@
-C:\Users\Dell\source\repos\PG2 Cizek\x64\Debug\glew32d.dll
-C:\Users\Dell\source\repos\PG2 Cizek\x64\Debug\glfw3.dll
-C:\Users\Dell\source\repos\PG2 Cizek\PG2 Cizek\x64\Debug\PG2 Cizek.vcxproj.Up2Date
