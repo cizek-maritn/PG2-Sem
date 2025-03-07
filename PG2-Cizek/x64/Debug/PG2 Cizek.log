@@ -1,0 +1,11 @@
+﻿  App.cpp
+C:\Users\Dell\source\repos\PG2-Cizek\App.cpp(173,61): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
+  DebugInfo.cpp
+  FPS.cpp
+  PG2-Cizek.cpp
+  WindowClass.cpp
+C:\Users\Dell\source\repos\PG2-Cizek\WindowClass.cpp(161,10): warning C4244: '+=': conversion from 'double' to 'GLfloat', possible loss of data
+C:\Users\Dell\source\repos\PG2-Cizek\WindowClass.cpp(167,7): warning C4244: '+=': conversion from 'double' to 'GLfloat', possible loss of data
+C:\Users\Dell\source\repos\PG2-Cizek\WindowClass.cpp(173,7): warning C4244: '+=': conversion from 'double' to 'GLfloat', possible loss of data
+  Generating Code...
+  PG2 Cizek.vcxproj -> C:\Users\Dell\source\repos\PG2-Cizek\x64\Debug\PG2-Cizek.exe
