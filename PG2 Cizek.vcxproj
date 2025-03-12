@@ -150,7 +150,10 @@
     <ClCompile Include="App.cpp" />
     <ClCompile Include="DebugInfo.cpp" />
     <ClCompile Include="FPS.cpp" />
+    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="OBJloader.cpp" />
     <ClCompile Include="PG2-Cizek.cpp" />
+    <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="WindowClass.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -158,6 +161,12 @@
     <ClInclude Include="assets.h" />
     <ClInclude Include="DebugInfo.h" />
     <ClInclude Include="FPS.h" />
+    <ClInclude Include="Loader.h" />
+    <ClInclude Include="Mesh.hpp" />
+    <ClInclude Include="Model.hpp" />
+    <ClInclude Include="OBJloader.hpp" />
+    <ClInclude Include="ShaderProgram.hpp" />
+    <ClInclude Include="StringTools.h" />
     <ClInclude Include="WindowClass.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

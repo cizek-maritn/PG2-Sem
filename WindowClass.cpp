@@ -158,19 +158,19 @@ void WindowClass::handleMousePress(int button, int action) {
 }
 
 void WindowClass::handleScrollEvent(double x, double y) {
-	r += (y * 0.1f);
-	if (r > 1.0f) r = 1.0f;
-	if (r < 0.0f) r = 0.0f;
+	rgba.r += (y * 0.1f);
+	if (rgba.r > 1.0f) rgba.r = 1.0f;
+	if (rgba.r < 0.0f) rgba.r = 0.0f;
 }
 
 void WindowClass::changeBlue(double val) {
-	b += val;
-	if (b < 0.0f) b = 0.0f;
-	if (b > 1.0f) b = 1.0f;
+	rgba.b += val;
+	if (rgba.b < 0.0f) rgba.b = 0.0f;
+	if (rgba.b > 1.0f) rgba.b = 1.0f;
 }
 
 void WindowClass::changeGreen(double val) {
-	g += val;
-	if (g < 0.0f) g = 0.0f;
-	if (g > 1.0f) g = 1.0f;
+	rgba.g += val;
+	if (rgba.g < 0.0f) rgba.g = 0.0f;
+	if (rgba.g > 1.0f) rgba.g = 1.0f;
 }

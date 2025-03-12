@@ -2,7 +2,11 @@
 
 #include "assets.h"
 #include "WindowClass.h"
+#include "Model.hpp"
+#include "ShaderProgram.hpp"
 #include <vector>
+#include <map>
+#include <unordered_map>
 
 class App {
 public:
@@ -14,6 +18,8 @@ public:
 	int run(void);
 
 	~App();
+protected:
+	std::unordered_map<std::string, Model> scene;
 private:
 	WindowClass* window;
 
@@ -22,10 +28,5 @@ private:
     GLuint VBO_ID{ 0 };
     GLuint VAO_ID{ 0 };
 
-    std::vector<vertex> triangle_vertices =
-    {
-        {{0.0f,  0.5f,  0.0f}},
-        {{0.5f, -0.5f,  0.0f}},
-        {{-0.5f, -0.5f,  0.0f}}
-    };
+	ShaderProgram my_shader;
 };

@@ -4,6 +4,7 @@
 #include <GL/glew.h>
 #include <GL/wglew.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 #include <iostream>
 
 class WindowClass {
@@ -22,11 +23,11 @@ public:
 	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 	static void mouseCallback(GLFWwindow* window, int button, int action, int mods);
 
+	glm::vec4 rgba = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+
 	bool getFullscreen() const;
 	bool getVsync() const;
 	GLFWwindow* getWindow() const;
-
-	GLfloat r{ 1.0f }, g{ 0.0f }, b{ 0.0f }, a{ 1.0f };
 
 private:
 	static void frameBufferSizeCallback(GLFWwindow* window, int w, int h);
