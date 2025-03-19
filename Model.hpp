@@ -43,6 +43,7 @@ public:
     
     void draw(glm::vec3 const & offset = glm::vec3(0.0), glm::vec3 const & rotation = glm::vec3(0.0f)) {
         // call draw() on mesh (all meshes)
+        //std::cout << "drawing model" << std::endl;
         for (auto & mesh : meshes) {
             mesh.draw(origin+offset, orientation+rotation);
         }

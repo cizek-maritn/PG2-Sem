@@ -1,6 +1,13 @@
 #pragma once
 #include "WindowClass.h"
-#include "App.h"
+#include "LoggerClass.h"
+#include "camera.hpp"
+//#include "App.h"
+
+float WindowClass::lastX = 0.0f;
+float WindowClass::lastY = 0.0f;
+bool WindowClass::mouseMove = true;
+std::unique_ptr<Camera> WindowClass::cam = nullptr;
 
 WindowClass::WindowClass(int w, int h, const char* name, bool fullscreen, bool vsync) : fullscreen(fullscreen), vsync(vsync) {
 	if (!glfwInit()) {
@@ -29,7 +36,10 @@ WindowClass::WindowClass(int w, int h, const char* name, bool fullscreen, bool v
 
 	glfwSetKeyCallback(window, keyCallback);
 	glfwSetScrollCallback(window, scrollCallback);
-	glfwSetMouseButtonCallback(window, mouseCallback);
+	glfwSetMouseButtonCallback(window, mouseButtonCallback);
+
+	glfwSetCursorPosCallback(window, mouseMovementCallback);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 WindowClass::~WindowClass() {
@@ -83,10 +93,10 @@ void WindowClass::keyCallback(GLFWwindow* window, int key, int scancode, int act
 	}
 }
 
-void WindowClass::mouseCallback(GLFWwindow* window, int button, int action, int mods) {
+void WindowClass::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
 	WindowClass* instance = static_cast<WindowClass*>(glfwGetWindowUserPointer(window));
 	if (instance) {
-		instance->handleMouseEvent(button, action);
+		instance->handleMouseButtonEvent(button, action);
 	}
 }
 
@@ -97,6 +107,30 @@ void WindowClass::scrollCallback(GLFWwindow* window, double x, double y) {
 	}
 }
 
+void WindowClass::mouseMovementCallback(GLFWwindow* window, double x, double y) {
+	if (WindowClass::cam == nullptr) {
+		LoggerClass::warning("No camera assigned to window.");
+		return;
+	}
+
+	float xpos = static_cast<float>(x);
+	float ypos = static_cast<float>(y);
+
+	if (WindowClass::mouseMove) {
+		WindowClass::lastX = xpos;
+		WindowClass::lastY = ypos;
+		WindowClass::mouseMove = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos;
+
+	lastX = xpos;
+	lastY = ypos;
+
+	WindowClass::cam->processMouseMovement(xoffset, yoffset, GL_TRUE);
+}
+
 void WindowClass::frameBufferSizeCallback(GLFWwindow* window, int w, int h) {
 	glViewport(0, 0, w, h);
 }
@@ -105,6 +139,7 @@ void WindowClass::handleKeyEvent(int key, int action) {
 	switch (action) {
 	case GLFW_PRESS:
 		this->handleKeyPress(key, action);
+		break;
 	default:
 		break;
 	}
@@ -137,10 +172,11 @@ void WindowClass::handleKeyPress(int key, int action) {
 	}
 }
 
-void WindowClass::handleMouseEvent(int button, int action) {
+void WindowClass::handleMouseButtonEvent(int button, int action) {
 	switch (action) {
 	case GLFW_PRESS:
 		this->handleMousePress(button, action);
+		break;
 	default:
 		break;
 	}

@@ -3,6 +3,7 @@
 
 FPS::FPS() {
 	frames = 0;
+	prevFrames = 0;
 	prevTime = glfwGetTime();
 	currentTime = glfwGetTime();
 }
@@ -18,6 +19,11 @@ int FPS::getFrames() {
 }
 
 void FPS::setFrames(int n) {
+	prevFrames = frames;
 	frames = n;
 	prevTime = glfwGetTime();
+}
+
+int FPS::getPrevFrames() {
+	return prevFrames;
 }

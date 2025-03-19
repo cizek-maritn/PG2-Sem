@@ -39,6 +39,12 @@
     <ClCompile Include="OBJloader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LoggerClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="WindowClass.h">
@@ -72,6 +78,12 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Loader.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="camera.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LoggerClass.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <iostream>
+#include "camera.hpp"
 
 class WindowClass {
 public:
@@ -17,17 +18,23 @@ public:
 
 	void handleScrollEvent(double x, double y);
 	void handleKeyEvent(int key, int action);
-	void handleMouseEvent(int button, int action);
+	void handleMouseButtonEvent(int button, int action);
 
 	static void scrollCallback(GLFWwindow* window, double x, double y);
 	static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-	static void mouseCallback(GLFWwindow* window, int button, int action, int mods);
+	static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+	static void mouseMovementCallback(GLFWwindow* window, double x, double y);
 
 	glm::vec4 rgba = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 
 	bool getFullscreen() const;
 	bool getVsync() const;
 	GLFWwindow* getWindow() const;
+
+	static std::unique_ptr<Camera> cam;
+	static bool mouseMove;
+	static float lastX;
+	static float lastY;
 
 private:
 	static void frameBufferSizeCallback(GLFWwindow* window, int w, int h);

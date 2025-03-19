@@ -148,8 +148,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
+    <ClCompile Include="camera.cpp" />
     <ClCompile Include="DebugInfo.cpp" />
     <ClCompile Include="FPS.cpp" />
+    <ClCompile Include="LoggerClass.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="OBJloader.cpp" />
     <ClCompile Include="PG2-Cizek.cpp" />
@@ -159,9 +161,11 @@
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="assets.h" />
+    <ClInclude Include="camera.hpp" />
     <ClInclude Include="DebugInfo.h" />
     <ClInclude Include="FPS.h" />
     <ClInclude Include="Loader.h" />
+    <ClInclude Include="LoggerClass.h" />
     <ClInclude Include="Mesh.hpp" />
     <ClInclude Include="Model.hpp" />
     <ClInclude Include="OBJloader.hpp" />

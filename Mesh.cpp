@@ -42,13 +42,6 @@ void Mesh::draw(glm::vec3 const& offset, glm::vec3 const& rotation) {
 
     shader.activate();
 
-    // for future use: set uniform variables: position, textures, etc...  
-    //set texture id etc...
-    //if (texture_id > 0) {
-    //    ...
-    //}
-
-    //TODO: draw mesh: bind vertex array object, draw all elements with selected primitive type 
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);

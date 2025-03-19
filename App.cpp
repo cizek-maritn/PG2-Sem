@@ -1,6 +1,7 @@
 //testing
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
 
 #include <opencv2/opencv.hpp>
@@ -15,21 +16,31 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "assets.h"
+#include "camera.hpp"
+#include "LoggerClass.h"
 #include "App.h"
 #include "FPS.h"
 #include "DebugInfo.h"
 
 App::App()
 {
-    std::cout << "starting" << std::endl;
+    LoggerClass::info("App has started.");
 }
 
 void App::init_assets(void) {
-    auto vertexShaderPath = std::filesystem::path("./resources/basic3.vert");
-    auto fragmentShaderPath = std::filesystem::path("./resources/basic3.frag");
+    auto vertexShaderPath = std::filesystem::path("./resources/basic_core.vert");
+    auto fragmentShaderPath = std::filesystem::path("./resources/basic_core.frag");
     auto objectPath = std::filesystem::path("./resources/objects/triangle.obj");
 
+    //auto camera = Camera(glm::vec3(0.0f, 0.0f, 5.0f));
+
     my_shader = ShaderProgram(vertexShaderPath, fragmentShaderPath);
+
+    window->cam = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 1.0f));
+
+    my_shader.setUniform("uP_m", window->cam->getProjMatrix());
+    my_shader.setUniform("uV_m", window->cam->getViewMatrix());
+    my_shader.activate();
 
     // model: load model file, assign shader used to draw a model
     Model my_model = Model(objectPath, my_shader);
@@ -73,6 +84,10 @@ bool App::init()
     glewInit();
     wglewInit();
 
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 11);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
     if (!GLEW_ARB_direct_state_access)
         throw std::runtime_error("No DSA :-(");
 
@@ -85,11 +100,24 @@ void App::report(void) {
     GLint extensionCount;
     glGetIntegerv(GL_NUM_EXTENSIONS, &extensionCount);
 
-    std::cout << "OpenGL Info: " << std::endl;
-    std::cout << "Vendor: " << "\t" << glGetString(GL_VENDOR) << std::endl;
-    std::cout << "Renderer: " << "\t" << glGetString(GL_RENDERER) << std::endl;
-    std::cout << "Version: " << "\t" << glGetString(GL_VERSION) << std::endl;
-    std::cout << "Extensions: " << "\t" << extensionCount << std::endl;
+    std::ostringstream vendor, renderer, version, extensions;
+
+    vendor << "Vendor: " << glGetString(GL_VENDOR);
+    renderer << "Renderer: " << glGetString(GL_RENDERER);
+    version << "Version: " << glGetString(GL_VERSION);
+    extensions << "Extensions: " << extensionCount;
+
+    LoggerClass::debug(vendor.str());
+    LoggerClass::debug(renderer.str());
+    LoggerClass::debug(version.str());
+    LoggerClass::debug(extensions.str());
+
+    /*glCullFace(GL_BACK);
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CW);*/
+    glEnable(GL_DEPTH_TEST);
+
+    LoggerClass::debug("Backface culling enabled (CW).");
 }
 
 int App::run(void)
@@ -98,7 +126,10 @@ int App::run(void)
     DebugInfo debug;
     window->rgba = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 
-    std::cout << "Debug output: " << "\t" << (debug.available ? "yes" : "no") << std::endl;
+    LoggerClass::debug("Debug output: " + (debug.available ? std::string("yes") : std::string("no")));
+
+    float deltaTime = 0.0f;
+    float lastFrameTime = 0.0f;
 
     //glUseProgram(shader_prog_ID);
 
@@ -108,16 +139,30 @@ int App::run(void)
         std::cerr << "Uniform location is not found in active shader program. Did you forget to activate it?\n";
     }*/
 
+
     while (!glfwWindowShouldClose(window->getWindow())) {
         if (fps.secondPassed()) {
             std::cout << "FPS: " << "\t" << fps.getFrames() << std::endl;
             fps.setFrames(0);
         }
 
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        float currentFrameTime = glfwGetTime();
+        deltaTime = currentFrameTime - lastFrameTime;
+        lastFrameTime = currentFrameTime;
+
+        window->cam->processInput(window->getWindow(), deltaTime);
+
+        glm::mat4 trans = glm::mat4(1.0f);
+        trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+
+        my_shader.setUniform("uniform_Color", window->rgba);
+        my_shader.setUniform("uP_m", window->cam->getProjMatrix());
+        my_shader.setUniform("uV_m", window->cam->getViewMatrix());
+        my_shader.setUniform("uM_m", trans);
         my_shader.activate();
-        my_shader.setUniform("ucolor", window->rgba);
 
         //glUniform4f(uniform_color_location, window->r, window->g, window->b, window->a);
 

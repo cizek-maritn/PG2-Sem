@@ -13,20 +13,21 @@ public:
 	App();
 
 	bool init(void);
-    void init_assets(void);
+	void init_assets(void);
 	void report(void);
 	int run(void);
 
 	~App();
+
 protected:
 	std::unordered_map<std::string, Model> scene;
 private:
 	WindowClass* window;
 
-    //new GL stuff
-    GLuint shader_prog_ID{ 0 };
-    GLuint VBO_ID{ 0 };
-    GLuint VAO_ID{ 0 };
+	//new GL stuff
+	GLuint shader_prog_ID{ 0 };
+	GLuint VBO_ID{ 0 };
+	GLuint VAO_ID{ 0 };
 
 	ShaderProgram my_shader;
 };
