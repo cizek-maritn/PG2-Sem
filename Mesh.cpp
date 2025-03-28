@@ -31,7 +31,7 @@ Mesh::Mesh(GLenum primitive_type, ShaderProgram shader, std::vector<Vertex> cons
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 };
 
 void Mesh::draw(glm::vec3 const& offset, glm::vec3 const& rotation) {
@@ -40,11 +40,14 @@ void Mesh::draw(glm::vec3 const& offset, glm::vec3 const& rotation) {
         return;
     }
 
+    //std::cout << "Drawing mesh with VAO: " << VAO << ", Index count: " << indices.size() << std::endl;
+
     shader.activate();
 
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+
 }
 
 void Mesh::clear(void) {

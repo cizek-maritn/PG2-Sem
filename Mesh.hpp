@@ -29,6 +29,7 @@ public:
     float reflectivity{1.0f}; 
     
     // indirect (indexed) draw 
+    Mesh(void) = default;
 	Mesh(GLenum primitive_type, ShaderProgram shader, std::vector<Vertex> const & vertices, std::vector<GLuint> const & indices, glm::vec3 const & origin, glm::vec3 const & orientation, GLuint const texture_id = 0);
 
     void draw(glm::vec3 const& offset, glm::vec3 const& rotation);

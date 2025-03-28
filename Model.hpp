@@ -17,6 +17,7 @@ public:
     glm::vec3 origin{};
     glm::vec3 orientation{};
     ShaderProgram shader{};
+    GLuint tex_ID{};
     
     Model(const std::filesystem::path & filename, ShaderProgram shader) {
         // load mesh (all meshes) of the model, (in the future: load material of each mesh, load textures...)
@@ -41,12 +42,37 @@ public:
         // origin += glm::vec3(3,0,0) * delta_t; // s = s0 + v*dt
     }
     
-    void draw(glm::vec3 const & offset = glm::vec3(0.0), glm::vec3 const & rotation = glm::vec3(0.0f)) {
+    void draw(glm::vec3 const & offset = glm::vec3(0.0), glm::vec3 const & rotation = glm::vec3(0.0f), glm::mat4 const& trans = glm::mat4(0.0f), WindowClass* window = nullptr) {
+        /*GLint activeTexture;
+        glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
+        std::cout << "Active Texture Unit: " << activeTexture << ", Bound Texture ID: " << tex_ID << std::endl;*/
+
+        shader.activate();
+
+        //shader.setUniform("mycolor", window->rgba);
+        shader.setUniform("uP_m", window->cam->getProjMatrix());
+        shader.setUniform("uV_m", window->cam->getViewMatrix());
+        shader.setUniform("uM_m", trans);
+
+        glActiveTexture(GL_TEXTURE0);
+        int i = 0;
+        glBindTextureUnit(i, tex_ID);
+        shader.setUniform("tex0", i);
+
         // call draw() on mesh (all meshes)
         //std::cout << "drawing model" << std::endl;
         for (auto & mesh : meshes) {
             mesh.draw(origin+offset, orientation+rotation);
         }
     }
-};
 
+    void clear(void) {
+        for (auto& mesh : meshes) {
+            mesh.clear();
+        }
+        if (tex_ID) {   // or all textures in vector...
+            glDeleteTextures(1, &tex_ID);
+            tex_ID = 0;
+        }
+    }
+};

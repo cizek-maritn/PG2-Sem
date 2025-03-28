@@ -34,7 +34,7 @@ glm::mat4 Camera::getViewMatrix() {
 
 glm::mat4 Camera::getProjMatrix() {
 	//std::cout << FOV << " " << Position << " " << Front << std::endl;
-	return glm::perspective(glm::radians(FOV), 1920.0f / 1080.0f, 0.1f, 100.0f);
+	return glm::perspective(glm::radians(FOV), 1920.0f / 1080.0f, 0.1f, 1000.0f);
 }
 
 void Camera::processInput(GLFWwindow* window, GLfloat deltaTime) {

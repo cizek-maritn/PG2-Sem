@@ -272,10 +272,7 @@ Mesh OBJLoader::getMesh(ShaderProgram shader, glm::vec3 const & origin, glm::vec
 	std::vector<Vertex> vertexes;
 
 	for (unsigned int i = 0; i < vertices.size(); i++) {
-		Vertex vertex;
-		vertex.Position = vertices[i];
-		vertex.TexCoords = uvs[i];
-		vertex.Normal = normals[i];
+		Vertex vertex(vertices[i], normals[i], uvs[i]);
 
 		vertexes.push_back(vertex);
 	}
