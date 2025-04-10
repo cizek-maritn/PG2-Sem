@@ -1,4 +1,6 @@
 //testing
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -15,6 +17,7 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 
 #include "assets.h"
 #include "camera.hpp"
@@ -47,7 +50,7 @@ void App::init_assets(void) {
     my_shader.activate();
 
     // model: load model file, assign shader used to draw a model
-    Model my_model = Model(objectPath, my_shader);
+    Model my_model = Model(objectPath, my_shader, glm::vec3(0.0f));
 
     GLuint tex = textureInit(texturePath);
 
@@ -55,8 +58,14 @@ void App::init_assets(void) {
 
     my_model.tex_ID = tex;
 
+    //transparent object
+    Model trans_model = Model(objectPath, my_shader, glm::vec3(2.0f));
+    trans_model.tex_ID = tex;
+    trans_model.transparent = true;
+
     // put model to scene
     scene.insert({ "my_first_object", my_model });
+    scene.insert({ "trans_object", trans_model });
 }
 
 GLuint App::textureInit(const std::filesystem::path& file_name)
@@ -210,14 +219,26 @@ Mesh App::GenHeightMap(const cv::Mat& hmap, const unsigned int mesh_step_size)
         }
     }
 
-    auto vertexShaderPath = std::filesystem::path("./resources/tex.vert");
-    auto fragmentShaderPath = std::filesystem::path("./resources/tex.frag");
+    auto vertexShaderPath = std::filesystem::path("./resources/directional.vert");
+    auto fragmentShaderPath = std::filesystem::path("./resources/directional.frag");
     hmapShader = ShaderProgram(vertexShaderPath, fragmentShaderPath);
 
-    hmapShader.setUniform("uP_m", window->cam->getProjMatrix());
-    hmapShader.setUniform("uV_m", window->cam->getViewMatrix());
-
     hmapShader.activate();
+
+    hmapShader.setUniform("p_m", window->cam->getProjMatrix());
+    hmapShader.setUniform("v_m", window->cam->getViewMatrix());
+    hmapShader.setUniform("m_m", glm::mat4(1.0f));
+
+    hmapShader.setUniform("light_position", glm::vec3(10.0f));
+
+    hmapShader.setUniform("ambient_intensity", glm::vec3(1.0f));
+    hmapShader.setUniform("diffuse_intensity", glm::vec3(1.0f));
+    hmapShader.setUniform("specular_intensity", glm::vec3(1.0f));
+
+    hmapShader.setUniform("ambient_material", glm::vec3(1.0f));
+    hmapShader.setUniform("diffuse_material", glm::vec3(1.0f));
+    hmapShader.setUniform("specular_material", glm::vec3(1.0f));
+    hmapShader.setUniform("specular_shininess", 32.0f);
 
     auto texturePath = std::filesystem::path("./resources/textures/tex_256.png");
     GLuint tex = textureInit(texturePath);
@@ -265,27 +286,54 @@ bool App::init()
     std::string name = "OpenGL Context";
     int x = 800;
     int y = 600;
+    bool aa_enabled = false;
+    int aa_level = 4;
 
     std::ifstream sett_file("app_settings.json");
-    nlohmann::json settings = nlohmann::json::parse(sett_file);
+    if (!sett_file.is_open()) {
+        std::cerr << "Error: Could not open settings file. Using default settings.\n";
+    }
+    else {
+        nlohmann::json settings = nlohmann::json::parse(sett_file);
 
-    name = settings["appname"];
+        name = settings["appname"];
 
-    // getting value - safely
-    if (settings["default_resolution"]["x"].is_number_integer()) {
-        // key found and value is proper type, use safe conversion            
-        x = settings["default_resolution"]["x"].template get<int>();
+        // getting value - safely
+        if (settings["default_resolution"]["x"].is_number_integer()) {
+            // key found and value is proper type, use safe conversion            
+            x = settings["default_resolution"]["x"].template get<int>();
+        }
+
+        if (settings["default_resolution"]["y"].is_number_integer()) {
+            // key found and value is proper type, use safe conversion            
+            y = settings["default_resolution"]["y"].template get<int>();
+        }
+
+        if (settings["antialiasing"]["enabled"].is_boolean()) {
+            aa_enabled = settings["antialiasing"]["enabled"].template get<bool>();
+        }
+
+        if (settings["antialiasing"]["level"].is_number_integer()) {
+            aa_level = settings["antialiasing"]["level"].template get<int>();
+        }
     }
 
-    if (settings["default_resolution"]["y"].is_number_integer()) {
-        // key found and value is proper type, use safe conversion            
-        y = settings["default_resolution"]["y"].template get<int>();
+    if (aa_enabled) {
+        if (aa_level <= 1) {
+            std::cerr << "Warning: Antialiasing enabled but level is 1 or lower. Disabling AA.\n";
+            aa_enabled = false;
+        }
+        else if (aa_level > 8) {
+            std::cerr << "Warning: Antialiasing level too high (>8). Clamping to 8.\n";
+            aa_level = 8;
+        }
     }
 
     std::cout << "app name: " << name << std::endl;
     std::cout << "[x,y] = [" << x << ',' << y << "]\n";
+    std::cout << "Antialiasing: " << (aa_enabled ? "Enabled" : "Disabled") << " (Level: " << aa_level << ")\n";
 
-    window = new WindowClass(x, y, name.c_str(), NULL, NULL);
+    window = new WindowClass(x, y, name.c_str(), NULL, NULL, aa_enabled, aa_level);
 
     glewInit();
     wglewInit();
@@ -307,6 +355,9 @@ bool App::init()
     
     init_assets();
     init_hm();
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthFunc(GL_LEQUAL);
 
     return true;
 }
@@ -364,27 +415,34 @@ int App::run(void)
 
         window->cam->processInput(window->getWindow(), deltaTime);
 
-        glm::mat4 trans = glm::mat4(1.0f);
-        trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+        std::vector<Model*> transparent;    // temporary, vector of pointers to transparent objects
+        transparent.reserve(scene.size());  // reserve size for all objects to avoid reallocation
 
-        //glUniform4f(uniform_color_location, window->r, window->g, window->b, window->a);
+        /*glm::mat4 trans = glm::mat4(1.0f);
+        trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));*/
 
-        ////bind 3d object data
-        //glBindVertexArray(VAO_ID);
-
-        //// draw all VAO data
-        //glDrawArrays(GL_TRIANGLES, 0, triangle_vertices.size());
-
-        for (auto& [name, model] : scene) {
-            model.draw(glm::vec3(0.0), glm::vec3(0.0), trans, window);
-        }
+        glDisable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
 
         hmapShader.activate();
 
-        //shader.setUniform("mycolor", window->rgba);
-        hmapShader.setUniform("uP_m", window->cam->getProjMatrix());
-        hmapShader.setUniform("uV_m", window->cam->getViewMatrix());
-        //hmapShader.setUniform("uM_m", trans);
+        hmapShader.setUniform("p_m", window->cam->getProjMatrix());
+        hmapShader.setUniform("v_m", window->cam->getViewMatrix());
+        hmapShader.setUniform("m_m", glm::mat4(1.0f));
+
+        glm::vec3 lightDir = glm::normalize(glm::vec3(1.0f, 0.25f, 1.0f));
+        lightDir = glm::rotate(lightDir, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        //glm::vec3 viewLightDir = glm::mat3(window->cam->getViewMatrix()) * lightDir;
+        hmapShader.setUniform("light_position", lightDir);
+
+        hmapShader.setUniform("ambient_material", glm::vec3(1.0f));
+        hmapShader.setUniform("diffuse_material", glm::vec3(0.8));
+        hmapShader.setUniform("specular_material", glm::vec3(1.0));
+
+        hmapShader.setUniform("ambient_intensity", glm::vec3(0.2));
+        hmapShader.setUniform("diffuse_intensity", glm::vec3(0.8));
+        hmapShader.setUniform("specular_intensity", glm::vec3(0.5));
+        hmapShader.setUniform("specular_shinines", 256.0f);
 
         glActiveTexture(GL_TEXTURE0);
         int i = 0;
@@ -392,6 +450,35 @@ int App::run(void)
         hmapShader.setUniform("tex0", i);
 
         heightMap.draw(glm::vec3(0.0), glm::vec3(0.0));
+
+        //my_shader.setUniform("u_diffuse_color", glm::vec4(1.0f));
+
+        for (auto& [name, model] : scene) {
+            if (!model.transparent) {
+                model.draw(glm::vec3(0.0), glm::vec3(0.0), glm::mat4(1.0f), window);
+            }
+            else {
+                transparent.emplace_back(&model); // save pointer for painters algorithm
+            }
+        }
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDepthMask(GL_FALSE);
+
+        std::sort(transparent.begin(), transparent.end(), [&](Model const* a, Model const* b) {
+            glm::vec3 translation_a = glm::vec3(a->model_matrix[3]);  // get 3 values from last column of model matrix = translation
+            glm::vec3 translation_b = glm::vec3(b->model_matrix[3]);  // dtto for model B
+            return glm::distance(window->cam->Position, translation_a) < glm::distance(window->cam->Position, translation_b); // sort by distance from camera
+            });
+
+        my_shader.setUniform("u_diffuse_color", glm::vec4(1.0f, 1.0f, 1.0f, 0.5f));
+
+        for (auto p : transparent) {
+            p->draw(glm::vec3(0.0), glm::vec3(0.0), glm::mat4(1.0f), window);
+        }
+
+        glDepthMask(GL_TRUE);
 
         glfwSwapBuffers(window->getWindow());
         glfwPollEvents();

@@ -9,10 +9,17 @@ float WindowClass::lastY = 0.0f;
 bool WindowClass::mouseMove = true;
 std::unique_ptr<Camera> WindowClass::cam = nullptr;
 
-WindowClass::WindowClass(int w, int h, const char* name, bool fullscreen, bool vsync) : fullscreen(fullscreen), vsync(vsync) {
+WindowClass::WindowClass(int w, int h, const char* name, bool fullscreen, bool vsync, bool aa, int aa_level) : fullscreen(fullscreen), vsync(vsync) {
 	if (!glfwInit()) {
 		std::cerr << "GLFW not initialized\n";
 		std::exit(-1);
+	}
+
+	if (aa) {
+		glfwWindowHint(GLFW_SAMPLES, aa_level);  // Enable MSAA with the specified level
+	}
+	else {
+		glfwWindowHint(GLFW_SAMPLES, 0);  // Disable MSAA
 	}
 
 	if (fullscreen) {
@@ -40,6 +47,10 @@ WindowClass::WindowClass(int w, int h, const char* name, bool fullscreen, bool v
 
 	glfwSetCursorPosCallback(window, mouseMovementCallback);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+	if (aa) {
+		glEnable(GL_MULTISAMPLE);
+	}
 }
 
 WindowClass::~WindowClass() {

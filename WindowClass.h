@@ -10,7 +10,7 @@
 
 class WindowClass {
 public:
-	WindowClass(int w, int h, const char* name, bool fullscreen = false, bool vsync = false);
+	WindowClass(int w, int h, const char* name, bool fullscreen = false, bool vsync = false, bool aa=false, int aa_level=4);
 	~WindowClass();
 
 	void setFullscreen(bool fullscreen);

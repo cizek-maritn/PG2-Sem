@@ -8,11 +8,13 @@ uniform mat4 uM_m = mat4(1.0f);
 uniform mat4 uV_m = mat4(1.0f);
 
 out vec3 ourColor;
-out vec2 texCoord;
+out VS_OUT {
+    vec2 texCoord;
+} vs_out;
 
 void main()
 {
     gl_Position = uP_m * uV_m * uM_m * vec4(aPos, 1.0f);
     //ourColor = aColor;
-    texCoord = aTexCoord;
+    vs_out.texCoord = aTexCoord;
 }

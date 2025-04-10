@@ -49,6 +49,7 @@ void ShaderProgram::setUniform(const std::string& name, const glm::vec3 val)
 		std::cerr << "no vec3 uniform with name:" << name << '\n';
 		return;
 	}
+	//std::cout << name << "ID: " << loc << std::endl;
 	glUniform3fv(loc, 1, glm::value_ptr(val));
 }
 

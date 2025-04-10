@@ -1,12 +1,16 @@
 #version 330 core
-out vec4 FragColor;
+// mandatory: final output color
+out vec4 FragColor; 
 
 in vec3 ourColor;
-in vec2 texCoord;
+in VS_OUT {
+    vec2 texCoord;
+} fs_in;
 
-uniform sampler2D tex0;
+uniform sampler2D tex0; // texture unit from C++
+uniform vec4 u_diffuse_color = vec4(1.0f);
 
 void main()
 {
-    FragColor = texture(tex0, texCoord);
+    FragColor = u_diffuse_color * texture(tex0, fs_in.texCoord);
 }

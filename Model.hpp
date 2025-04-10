@@ -18,13 +18,15 @@ public:
     glm::vec3 orientation{};
     ShaderProgram shader{};
     GLuint tex_ID{};
+    bool transparent{ false };
+    glm::mat4 model_matrix;
     
-    Model(const std::filesystem::path & filename, ShaderProgram shader) {
+    Model(const std::filesystem::path & filename, ShaderProgram shader, glm::vec3 origin) {
         // load mesh (all meshes) of the model, (in the future: load material of each mesh, load textures...)
         // TODO: call LoadOBJFile, LoadMTLFile (if exist), process data, create mesh and set its properties
         //    notice: you can load multiple meshes and place them to proper positions, 
         //            multiple textures (with reusing) etc. to construct single complicated Model  
-        this->origin = glm::vec3(0.0f);
+        this->origin = origin;
         this->orientation = glm::vec3(0.0f);
         this->meshes = std::vector<Mesh>{};
         this->name = filename.string();
@@ -42,17 +44,30 @@ public:
         // origin += glm::vec3(3,0,0) * delta_t; // s = s0 + v*dt
     }
     
-    void draw(glm::vec3 const & offset = glm::vec3(0.0), glm::vec3 const & rotation = glm::vec3(0.0f), glm::mat4 const& trans = glm::mat4(0.0f), WindowClass* window = nullptr) {
+    void draw(glm::vec3 const & offset = glm::vec3(0.0), glm::vec3 const & rotation = glm::vec3(0.0f), glm::mat4 const& trans = glm::mat4(1.0f), WindowClass* window = nullptr) {
         /*GLint activeTexture;
         glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
         std::cout << "Active Texture Unit: " << activeTexture << ", Bound Texture ID: " << tex_ID << std::endl;*/
 
         shader.activate();
 
+        // Compute the model matrix correctly
+        this->model_matrix = glm::mat4(1.0f);
+        this->model_matrix = glm::translate(this->model_matrix, origin + offset);  // Apply object origin and additional offset
+        this->model_matrix = glm::rotate(this->model_matrix, glm::radians(orientation.x + rotation.x), glm::vec3(1.0, 0.0, 0.0));
+        this->model_matrix = glm::rotate(this->model_matrix, glm::radians(orientation.y + rotation.y), glm::vec3(0.0, 1.0, 0.0));
+        this->model_matrix = glm::rotate(this->model_matrix, glm::radians(orientation.z + rotation.z), glm::vec3(0.0, 0.0, 1.0));
+
+        // Step 2: Apply local rotation (rotates around its own Y-axis)
+        this->model_matrix = glm::rotate(this->model_matrix, glm::radians(orientation.y + rotation.y) + (float)glfwGetTime(), glm::vec3(0.0, 1.0, 0.0));
+
+        // Combine with any additional transformation matrix (`trans`)
+        this->model_matrix = trans * this->model_matrix;
+
         //shader.setUniform("mycolor", window->rgba);
         shader.setUniform("uP_m", window->cam->getProjMatrix());
         shader.setUniform("uV_m", window->cam->getViewMatrix());
-        shader.setUniform("uM_m", trans);
+        shader.setUniform("uM_m", this->model_matrix);
 
         glActiveTexture(GL_TEXTURE0);
         int i = 0;

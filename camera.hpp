@@ -41,6 +41,7 @@ public:
 
     void processInput(GLFWwindow* window, GLfloat deltaTime);
     void processMouseMovement(GLfloat xoffset, GLfloat yoffset, GLboolean constraintPitch);
+    glm::vec3 getPosition();
 
 private:
     void updateCameraVectors();
