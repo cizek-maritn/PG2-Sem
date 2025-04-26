@@ -36,6 +36,8 @@ public:
 	static float lastX;
 	static float lastY;
 
+	int useSpotlight=0;
+
 private:
 	static void frameBufferSizeCallback(GLFWwindow* window, int w, int h);
 	void handleKeyPress(int key, int action);

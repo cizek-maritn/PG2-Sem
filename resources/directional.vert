@@ -9,7 +9,7 @@ in vec2 aTexCoord;
 uniform mat4 m_m, v_m, p_m;
 
 // Light properties
-uniform vec3 light_position;
+uniform vec3 light_direction;
 
 // Outputs to the fragment shader
 out VS_OUT {
@@ -30,9 +30,9 @@ void main(void) {
     // Calculate normal in view space
     vs_out.N = normalize(mat3(mv_m) * aNormal);
      // Calculate view-space light vector
-    vec3 light_view_space = vec3(v_m * vec4(light_position, 1.0));
+    vec3 light_view_space = vec3(v_m * vec4(light_direction, 1.0));
     vec3 position_view_space = vec3(mv_m * aPosition);
-    vs_out.L = normalize(mat3(v_m) * -light_position);
+    vs_out.L = normalize(mat3(v_m) * -light_direction);
     vs_out.V = -position_view_space;
 
 	// Assigns the texture coordinates from the Vertex Data to "texCoord"

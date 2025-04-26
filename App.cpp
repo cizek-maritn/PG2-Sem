@@ -34,10 +34,11 @@ App::App()
 }
 
 void App::init_assets(void) {
-    auto vertexShaderPath = std::filesystem::path("./resources/tex.vert");
-    auto fragmentShaderPath = std::filesystem::path("./resources/tex.frag");
+    auto vertexShaderPath = std::filesystem::path("./resources/directional.vert");
+    auto fragmentShaderPath = std::filesystem::path("./resources/directional.frag");
     auto objectPath = std::filesystem::path("./resources/objects/cube.obj");
     auto texturePath = std::filesystem::path("./resources/textures/box_rgb888.png");
+    auto treePath = std::filesystem::path("./resources/objects/Lowpoly_tree_sample.obj");
 
     //auto camera = Camera(glm::vec3(0.0f, 0.0f, 5.0f));
 
@@ -45,9 +46,28 @@ void App::init_assets(void) {
 
     window->cam = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 1.0f));
 
-    my_shader.setUniform("uP_m", window->cam->getProjMatrix());
-    my_shader.setUniform("uV_m", window->cam->getViewMatrix());
     my_shader.activate();
+
+    my_shader.setUniform("p_m", window->cam->getProjMatrix());
+    my_shader.setUniform("v_m", window->cam->getViewMatrix());
+    my_shader.setUniform("m_m", glm::mat4(1.0f));
+
+    my_shader.setUniform("light_direction", glm::vec3(10.0f));
+
+    my_shader.setUniform("ambient_intensity", glm::vec3(1.0f));
+    my_shader.setUniform("diffuse_intensity", glm::vec3(1.0f));
+    my_shader.setUniform("specular_intensity", glm::vec3(1.0f));
+
+    my_shader.setUniform("ambient_material", glm::vec3(1.0f));
+    my_shader.setUniform("diffuse_material", glm::vec3(1.0f));
+    my_shader.setUniform("specular_material", glm::vec3(1.0f));
+    my_shader.setUniform("specular_shininess", 32.0f);
+
+    my_shader.setUniform("useSpotlight", 0);
+
+    my_shader.setUniform("alpha", 1.0f);
+
+    my_shader.setUniform("tex0", 0);
 
     // model: load model file, assign shader used to draw a model
     Model my_model = Model(objectPath, my_shader, glm::vec3(0.0f));
@@ -63,9 +83,12 @@ void App::init_assets(void) {
     trans_model.tex_ID = tex;
     trans_model.transparent = true;
 
+    Model tree_model = Model(treePath, my_shader, glm::vec3(537.0f, 254.0f, 594.0f));
+
     // put model to scene
     scene.insert({ "my_first_object", my_model });
     scene.insert({ "trans_object", trans_model });
+    scene.insert({ "tree", tree_model });
 }
 
 GLuint App::textureInit(const std::filesystem::path& file_name)
@@ -198,8 +221,8 @@ Mesh App::GenHeightMap(const cv::Mat& hmap, const unsigned int mesh_step_size)
             glm::vec2 tc3 = tc0 + glm::vec2(0.0f, 1.0f / 16);       //add offset for bottom leftcorner
 
             // normals for both triangles, CCW
-            glm::vec3 n1 = glm::normalize(glm::cross(p1 - p0, p2 - p0)); // for p1
-            glm::vec3 n2 = glm::normalize(glm::cross(p2 - p0, p3 - p0)); // for p3
+            glm::vec3 n1 = -glm::normalize(glm::cross(p1 - p0, p2 - p0)); // for p1
+            glm::vec3 n2 = -glm::normalize(glm::cross(p2 - p0, p3 - p0)); // for p3
             glm::vec3 navg = glm::normalize(n1 + n2);                 // average for p0, p2 - common
 
             //place vertices and ST to mesh
@@ -219,7 +242,7 @@ Mesh App::GenHeightMap(const cv::Mat& hmap, const unsigned int mesh_step_size)
         }
     }
 
-    auto vertexShaderPath = std::filesystem::path("./resources/directional.vert");
+    /*auto vertexShaderPath = std::filesystem::path("./resources/directional.vert");
     auto fragmentShaderPath = std::filesystem::path("./resources/directional.frag");
     hmapShader = ShaderProgram(vertexShaderPath, fragmentShaderPath);
 
@@ -238,7 +261,7 @@ Mesh App::GenHeightMap(const cv::Mat& hmap, const unsigned int mesh_step_size)
     hmapShader.setUniform("ambient_material", glm::vec3(1.0f));
     hmapShader.setUniform("diffuse_material", glm::vec3(1.0f));
     hmapShader.setUniform("specular_material", glm::vec3(1.0f));
-    hmapShader.setUniform("specular_shininess", 32.0f);
+    hmapShader.setUniform("specular_shininess", 32.0f);*/
 
     auto texturePath = std::filesystem::path("./resources/textures/tex_256.png");
     GLuint tex = textureInit(texturePath);
@@ -251,9 +274,9 @@ Mesh App::GenHeightMap(const cv::Mat& hmap, const unsigned int mesh_step_size)
 
     GLenum primitive_type = GL_TRIANGLES;
 
-    hmapShader.setUniform("tex0", i);
+    my_shader.setUniform("tex0", i);
 
-    return Mesh(primitive_type, hmapShader, vertices, indices, glm::vec3(0.0), glm::vec3(0.0), i);
+    return Mesh(primitive_type, my_shader, vertices, indices, glm::vec3(0.0), glm::vec3(0.0), i);
 }
 
 glm::vec2 App::get_subtex_st(const int x, const int y)
@@ -424,34 +447,50 @@ int App::run(void)
         glDisable(GL_BLEND);
         glEnable(GL_DEPTH_TEST);
 
-        hmapShader.activate();
+        my_shader.activate();
 
-        hmapShader.setUniform("p_m", window->cam->getProjMatrix());
-        hmapShader.setUniform("v_m", window->cam->getViewMatrix());
-        hmapShader.setUniform("m_m", glm::mat4(1.0f));
+        my_shader.setUniform("p_m", window->cam->getProjMatrix());
+        my_shader.setUniform("v_m", window->cam->getViewMatrix());
+        my_shader.setUniform("m_m", glm::mat4(1.0f));
 
-        glm::vec3 lightDir = glm::normalize(glm::vec3(1.0f, 0.25f, 1.0f));
+        glm::vec3 lightDir = glm::normalize(glm::vec3(-1.0f, -0.25f, -1.0f));
         lightDir = glm::rotate(lightDir, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        //glm::vec3 viewLightDir = glm::mat3(window->cam->getViewMatrix()) * lightDir;
-        hmapShader.setUniform("light_position", lightDir);
+        my_shader.setUniform("light_direction", lightDir);
 
-        hmapShader.setUniform("ambient_material", glm::vec3(1.0f));
-        hmapShader.setUniform("diffuse_material", glm::vec3(0.8));
-        hmapShader.setUniform("specular_material", glm::vec3(1.0));
+        my_shader.setUniform("ambient_material", glm::vec3(1.0f));
+        my_shader.setUniform("diffuse_material", glm::vec3(0.8));
+        my_shader.setUniform("specular_material", glm::vec3(1.0));
 
-        hmapShader.setUniform("ambient_intensity", glm::vec3(0.2));
-        hmapShader.setUniform("diffuse_intensity", glm::vec3(0.8));
-        hmapShader.setUniform("specular_intensity", glm::vec3(0.5));
-        hmapShader.setUniform("specular_shinines", 256.0f);
+        my_shader.setUniform("ambient_intensity", glm::vec3(0.2));
+        my_shader.setUniform("diffuse_intensity", glm::vec3(0.8));
+        my_shader.setUniform("specular_intensity", glm::vec3(0.5));
+        my_shader.setUniform("specular_shinines", 512.0f);
+        my_shader.setUniform("alpha", 1.0f);
+
+        my_shader.setUniform("useSpotlight", window->useSpotlight);
+
+        glm::vec3 spotPosView = glm::vec3(window->cam->getViewMatrix() * glm::vec4(window->cam->getPosition(), 1.0));
+        glm::vec3 spotDirView = glm::mat3(window->cam->getViewMatrix()) * window->cam->Front;
+
+        my_shader.setUniform("spotlight_position", spotPosView);
+        my_shader.setUniform("spotlight_direction", spotDirView);
+
+        my_shader.setUniform("spotlight_cutOff", glm::cos(glm::radians(20.0f)));
+        my_shader.setUniform("spotlight_outerCutOff", glm::cos(glm::radians(35.0f)));
+        my_shader.setUniform("spotlight_constant", 1.0f);
+        my_shader.setUniform("spotlight_linear", 0.09f);
+        my_shader.setUniform("spotlight_quadratic", 0.032f);
 
         glActiveTexture(GL_TEXTURE0);
         int i = 0;
         glBindTextureUnit(i, hmapTex);
-        hmapShader.setUniform("tex0", i);
+        my_shader.setUniform("tex0", i);
 
         heightMap.draw(glm::vec3(0.0), glm::vec3(0.0));
 
         //my_shader.setUniform("u_diffuse_color", glm::vec4(1.0f));
+
+        my_shader.setUniform("tex0", 0);
 
         for (auto& [name, model] : scene) {
             if (!model.transparent) {
@@ -472,7 +511,7 @@ int App::run(void)
             return glm::distance(window->cam->Position, translation_a) < glm::distance(window->cam->Position, translation_b); // sort by distance from camera
             });
 
-        my_shader.setUniform("u_diffuse_color", glm::vec4(1.0f, 1.0f, 1.0f, 0.5f));
+        my_shader.setUniform("alpha", 0.5f);
 
         for (auto p : transparent) {
             p->draw(glm::vec3(0.0), glm::vec3(0.0), glm::mat4(1.0f), window);

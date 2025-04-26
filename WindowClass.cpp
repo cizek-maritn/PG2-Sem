@@ -1,4 +1,7 @@
 #pragma once
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>
+
 #include "WindowClass.h"
 #include "LoggerClass.h"
 #include "camera.hpp"
@@ -175,7 +178,9 @@ void WindowClass::handleKeyPress(int key, int action) {
 		break;
 	}
 	case GLFW_KEY_B:
-		changeBlue(0.1f);
+		if (this->useSpotlight) this->useSpotlight = 0;
+		else this->useSpotlight = 1;
+		//std::cout << this->useSpotlight << std::endl;
 		break;
 	case GLFW_KEY_N:
 		changeBlue(-0.1f);
@@ -211,9 +216,7 @@ void WindowClass::handleScrollEvent(double x, double y) {
 }
 
 void WindowClass::changeBlue(double val) {
-	rgba.b += val;
-	if (rgba.b < 0.0f) rgba.b = 0.0f;
-	if (rgba.b > 1.0f) rgba.b = 1.0f;
+	std::cout << this->cam->getPosition() << std::endl;
 }
 
 void WindowClass::changeGreen(double val) {

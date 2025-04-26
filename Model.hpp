@@ -35,7 +35,7 @@ public:
         auto filetype = filename.extension().string();
         if (filetype == ".obj") {
             auto loader = OBJLoader(filename);
-            meshes.push_back(loader.getMesh(shader, this->origin, this->orientation));
+            meshes=loader.getMesh(shader, this->origin, this->orientation);
         }
     }
 
@@ -65,9 +65,9 @@ public:
         this->model_matrix = trans * this->model_matrix;
 
         //shader.setUniform("mycolor", window->rgba);
-        shader.setUniform("uP_m", window->cam->getProjMatrix());
-        shader.setUniform("uV_m", window->cam->getViewMatrix());
-        shader.setUniform("uM_m", this->model_matrix);
+        shader.setUniform("p_m", window->cam->getProjMatrix());
+        shader.setUniform("v_m", window->cam->getViewMatrix());
+        shader.setUniform("m_m", this->model_matrix);
 
         glActiveTexture(GL_TEXTURE0);
         int i = 0;
