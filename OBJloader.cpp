@@ -18,6 +18,7 @@ OBJLoader::OBJLoader(const std::filesystem::path& filename)
 	std::vector< glm::vec2 > temp_uvs;
 	std::vector< glm::vec3 > temp_normals;
 	MeshContainer currentGroup;
+	usesMTL = false;
 
 	LoggerClass::info("Loading " + filename.string());
 
@@ -56,6 +57,7 @@ OBJLoader::OBJLoader(const std::filesystem::path& filename)
 			temp_normals.push_back(normal);
 		}
 		else if (strcmp(lineHeader, "mtllib")==0) {
+			usesMTL = true;
 			char mtlFilename[MAX_LINE_SIZE];
 			fscanf_s(file, "%s\n", mtlFilename, MAX_LINE_SIZE);
 
@@ -160,12 +162,16 @@ std::vector<Mesh> OBJLoader::getMesh(ShaderProgram shader, glm::vec3 const & ori
 			vertexes.push_back(vertex);
 		}
 
-		Mesh mesh(GL_TRIANGLES, shader, vertexes, group.indices, glm::vec3(0.0f), glm::vec3(0.0f), 0);
+		if (!usesMTL) { 
+			Mesh mesh(GL_TRIANGLES, shader, vertexes, group.indices, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec4(1.0f), glm::vec4(1.0f), glm::vec4(1.0f),1.0f,false,0);
+			meshes.push_back(mesh);
+		}
+		else {
+			Material mat = materials[group.materialName];
+			Mesh mesh(GL_TRIANGLES, shader, vertexes, group.indices, glm::vec3(0.0f), glm::vec3(0.0f), mat.ambient, mat.diffuse, mat.specular, mat.shininess,true,0);
+			meshes.push_back(mesh);
+		}
 
-		// You might want to store material name or material reference in Mesh class later.
-		// For now, we can bind materials at draw time based on material name.
-
-		meshes.push_back(mesh);
 	}
 	return meshes;
 }

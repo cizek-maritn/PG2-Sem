@@ -84,6 +84,7 @@ void App::init_assets(void) {
     trans_model.transparent = true;
 
     Model tree_model = Model(treePath, my_shader, glm::vec3(537.0f, 254.0f, 594.0f));
+    //Model tree_model = Model(treePath, my_shader, glm::vec3(4.0f, 4.0f, 4.0f));
 
     // put model to scene
     scene.insert({ "my_first_object", my_model });
@@ -276,7 +277,7 @@ Mesh App::GenHeightMap(const cv::Mat& hmap, const unsigned int mesh_step_size)
 
     my_shader.setUniform("tex0", i);
 
-    return Mesh(primitive_type, my_shader, vertices, indices, glm::vec3(0.0), glm::vec3(0.0), i);
+    return Mesh(primitive_type, my_shader, vertices, indices, glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0), glm::vec3(0.0),false, i);
 }
 
 glm::vec2 App::get_subtex_st(const int x, const int y)
@@ -458,16 +459,17 @@ int App::run(void)
         my_shader.setUniform("light_direction", lightDir);
 
         my_shader.setUniform("ambient_material", glm::vec3(1.0f));
-        my_shader.setUniform("diffuse_material", glm::vec3(0.8));
-        my_shader.setUniform("specular_material", glm::vec3(1.0));
+        my_shader.setUniform("diffuse_material", glm::vec3(0.8f));
+        my_shader.setUniform("specular_material", glm::vec3(1.0f));
 
-        my_shader.setUniform("ambient_intensity", glm::vec3(0.2));
-        my_shader.setUniform("diffuse_intensity", glm::vec3(0.8));
-        my_shader.setUniform("specular_intensity", glm::vec3(0.5));
+        my_shader.setUniform("ambient_intensity", glm::vec3(0.2f));
+        my_shader.setUniform("diffuse_intensity", glm::vec3(0.8f));
+        my_shader.setUniform("specular_intensity", glm::vec3(0.5f));
         my_shader.setUniform("specular_shinines", 512.0f);
         my_shader.setUniform("alpha", 1.0f);
 
         my_shader.setUniform("useSpotlight", window->useSpotlight);
+        my_shader.setUniform("useTexture", 1);
 
         glm::vec3 spotPosView = glm::vec3(window->cam->getViewMatrix() * glm::vec4(window->cam->getPosition(), 1.0));
         glm::vec3 spotDirView = glm::mat3(window->cam->getViewMatrix()) * window->cam->Front;

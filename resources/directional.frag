@@ -11,6 +11,7 @@ uniform float alpha;
 
 // active texture unit
 uniform sampler2D tex0;
+uniform bool useTexture;
 
 // spotlight variables
 uniform bool useSpotlight;
@@ -27,20 +28,25 @@ in VS_OUT {
 } fs_in;
 
 void main(void) {
-    vec3 texColor = texture(tex0, fs_in.texCoord).rgb;
-
     // Normalize the incoming N, L and V vectors
     vec3 N = normalize(fs_in.N);
     vec3 L = normalize(fs_in.L);
     vec3 V = normalize(fs_in.V);
     vec3 H = normalize(L + V); // halfway vector
 
+    vec3 baseColor;
+    if (useTexture) {
+        baseColor = texture(tex0, fs_in.texCoord).rgb;
+    } else {
+        baseColor=diffuse_material;
+    }
+
     // Directiona light, always active
     vec3 ambient = ambient_material * ambient_intensity;
     vec3 diffuse = max(dot(N, L), 0.0) * diffuse_material * diffuse_intensity;
     vec3 specular = pow(max(dot(N, H), 0.0), specular_shinines) * specular_material * specular_intensity;
 
-    vec3 color = (ambient+diffuse) * (texColor + specular);
+    vec3 color = (ambient+diffuse) * (baseColor + specular);
 
     if (useSpotlight) {
         vec3 fragPos = -fs_in.V;
@@ -61,7 +67,7 @@ void main(void) {
         float specS = pow(max(dot(N, spotH), 0.0), specular_shinines);
         vec3 spotSpec = specS * specular_material * specular_intensity;
 
-        vec3 spotResult = (ambient + spotDiff) * texColor + spotSpec;
+        vec3 spotResult = (ambient + spotDiff) * baseColor + spotSpec;
         spotResult *= intensity * attenuation;
 
         color += spotResult;

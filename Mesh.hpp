@@ -23,14 +23,15 @@ public:
     ShaderProgram shader;
     
     // mesh material
-    glm::vec4 ambient_material{1.0f}; //white, non-transparent 
-    glm::vec4 diffuse_material{1.0f}; //white, non-transparent 
-    glm::vec4 specular_material{1.0f}; //white, non-transparent
-    float reflectivity{1.0f}; 
+    glm::vec3 aMat{1.0f}; //white, non-transparent 
+    glm::vec3 dMat{1.0f}; //white, non-transparent 
+    glm::vec3 sMat{1.0f}; //white, non-transparent
+    float shine{1.0f}; 
+    bool MTL;
     
     // indirect (indexed) draw 
     Mesh(void) = default;
-	Mesh(GLenum primitive_type, ShaderProgram shader, std::vector<Vertex> const & vertices, std::vector<GLuint> const & indices, glm::vec3 const & origin, glm::vec3 const & orientation, GLuint const texture_id = 0);
+	Mesh(GLenum primitive_type, ShaderProgram shader, std::vector<Vertex> const & vertices, std::vector<GLuint> const & indices, glm::vec3 const & origin, glm::vec3 const & orientation, glm::vec3 aMat, glm::vec3 dMat, glm::vec3 sMat, float shine, bool MTL, GLuint const texture_id = 0);
 
     void draw(glm::vec3 const& offset, glm::vec3 const& rotation);
     void clear(void);

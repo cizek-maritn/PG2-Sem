@@ -1,12 +1,17 @@
 #include "Mesh.hpp"
 
-Mesh::Mesh(GLenum primitive_type, ShaderProgram shader, std::vector<Vertex> const& vertices, std::vector<GLuint> const& indices, glm::vec3 const& origin, glm::vec3 const& orientation, GLuint const texture_id) :
+Mesh::Mesh(GLenum primitive_type, ShaderProgram shader, std::vector<Vertex> const& vertices, std::vector<GLuint> const& indices, glm::vec3 const& origin, glm::vec3 const& orientation, glm::vec3 aMat, glm::vec3 dMat, glm::vec3 sMat, float shine, bool MTL, GLuint const texture_id) :
     primitive_type(primitive_type),
     shader(shader),
     vertices(vertices),
     indices(indices),
     origin(origin),
     orientation(orientation),
+    aMat(aMat),
+    dMat(dMat),
+    sMat(sMat),
+    shine(shine),
+    MTL(MTL),
     texture_id(texture_id)
 {
     glGenVertexArrays(1, &VAO);
@@ -43,10 +48,26 @@ void Mesh::draw(glm::vec3 const& offset, glm::vec3 const& rotation) {
     //std::cout << "Drawing mesh with VAO: " << VAO << ", Index count: " << indices.size() << std::endl;
 
     shader.activate();
+    if (MTL) {
+        shader.setUniform("useTexture", 0);
+        shader.setUniform("ambient_material", aMat);
+        shader.setUniform("diffuse_material", dMat);
+        shader.setUniform("specular_material", sMat);
+        shader.setUniform("specular_shinines", shine);
+    }
 
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+
+    //set back to "default"
+    if (MTL) {
+        shader.setUniform("useTexture", 1);
+        shader.setUniform("ambient_material", glm::vec3(1.0f));
+        shader.setUniform("diffuse_material", glm::vec3(0.8f));
+        shader.setUniform("specular_material", glm::vec3(1.0f));
+        shader.setUniform("specular_shinines", 512.0f);
+    }
 
 }
 
