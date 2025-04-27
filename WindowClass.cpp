@@ -210,9 +210,9 @@ void WindowClass::handleMousePress(int button, int action) {
 }
 
 void WindowClass::handleScrollEvent(double x, double y) {
-	rgba.r += (y * 0.1f);
-	if (rgba.r > 1.0f) rgba.r = 1.0f;
-	if (rgba.r < 0.0f) rgba.r = 0.0f;
+	this->cam->FOV -= 5 * y;
+	if (this->cam->FOV > 90.0f) this->cam->FOV = 90.0f;
+	if (this->cam->FOV < 30.0f) this->cam->FOV = 30.0f;
 }
 
 void WindowClass::changeBlue(double val) {

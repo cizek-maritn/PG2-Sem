@@ -1,5 +1,19 @@
 #version 460 core
 
+//point light struct
+struct PointLight {
+    vec3 Pposition;
+    vec3 Pambient;
+    vec3 Pdiffuse;
+    vec3 Pspecular;
+
+    float Pconstant;
+    float Plinear;
+    float Pquadratic;
+};
+
+uniform PointLight pointLights[3];
+
 // Outputs colors in RGBA
 out vec4 FragColor;
 
@@ -26,6 +40,27 @@ in VS_OUT {
     vec3 V;
     vec2 texCoord;
 } fs_in;
+
+vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
+    vec3 lightDir = normalize(light.Pposition - fragPos);
+    float diff = max(dot(normal, lightDir), 0.0);
+
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), specular_shinines);
+
+    float distance = length(light.Pposition - fragPos);
+    float attenuation = 1.0 / (light.Pconstant + light.Plinear * distance + light.Pquadratic * (distance*distance));
+
+    vec3 ambient = light.Pambient * ambient_material;
+    vec3 diffuse = light.Pdiffuse * diff * diffuse_material;
+    vec3 specular = light.Pspecular * spec * specular_material;
+
+    ambient *= attenuation;
+    diffuse *= attenuation;
+    specular *= attenuation;
+
+    return (ambient + diffuse + specular);
+}
 
 void main(void) {
     // Normalize the incoming N, L and V vectors
@@ -72,6 +107,13 @@ void main(void) {
 
         color += spotResult;
     }
+
+    vec3 fragPos = -fs_in.V;
+
+    for (int i=0; i<3; i++) {
+        color += CalcPointLight(pointLights[i], N, fragPos, V);
+    }
+
     FragColor = vec4(color, alpha);
 }
 

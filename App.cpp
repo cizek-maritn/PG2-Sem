@@ -26,7 +26,6 @@
 #include "FPS.h"
 #include "DebugInfo.h"
 #include "Mesh.hpp"
-#include "assets.h"
 
 App::App()
 {
@@ -243,27 +242,6 @@ Mesh App::GenHeightMap(const cv::Mat& hmap, const unsigned int mesh_step_size)
         }
     }
 
-    /*auto vertexShaderPath = std::filesystem::path("./resources/directional.vert");
-    auto fragmentShaderPath = std::filesystem::path("./resources/directional.frag");
-    hmapShader = ShaderProgram(vertexShaderPath, fragmentShaderPath);
-
-    hmapShader.activate();
-
-    hmapShader.setUniform("p_m", window->cam->getProjMatrix());
-    hmapShader.setUniform("v_m", window->cam->getViewMatrix());
-    hmapShader.setUniform("m_m", glm::mat4(1.0f));
-
-    hmapShader.setUniform("light_position", glm::vec3(10.0f));
-
-    hmapShader.setUniform("ambient_intensity", glm::vec3(1.0f));
-    hmapShader.setUniform("diffuse_intensity", glm::vec3(1.0f));
-    hmapShader.setUniform("specular_intensity", glm::vec3(1.0f));
-
-    hmapShader.setUniform("ambient_material", glm::vec3(1.0f));
-    hmapShader.setUniform("diffuse_material", glm::vec3(1.0f));
-    hmapShader.setUniform("specular_material", glm::vec3(1.0f));
-    hmapShader.setUniform("specular_shininess", 32.0f);*/
-
     auto texturePath = std::filesystem::path("./resources/textures/tex_256.png");
     GLuint tex = textureInit(texturePath);
     hmapTex = tex;
@@ -298,6 +276,39 @@ glm::vec2 App::get_subtex_by_height(float height)
         return get_subtex_st(2, 0); //soil
     else
         return get_subtex_st(0, 0); //grass
+}
+
+void App::init_pl() {
+    PointLight r; PointLight g; PointLight b;
+
+    //positions
+    r.position = glm::vec3(4.0f, 3.0f, 0.0f);
+    g.position = glm::vec3(0.0f, 3.0f, 4.0f);
+    b.position = glm::vec3(-2.0f, 3.0f, -2.0f);
+
+    //ambients
+    r.ambient = glm::vec3(0.1f, 0.0f, 0.0f);
+    g.ambient = glm::vec3(0.0f, 0.1f, 0.0f);
+    b.ambient = glm::vec3(0.0f, 0.0f, 0.1f);
+
+    //diffs
+    r.diffuse = glm::vec3(1.0f, 0.0f, 0.0f);
+    g.diffuse = glm::vec3(0.0f, 1.0f, 0.0f);
+    b.diffuse = glm::vec3(0.0f, 0.0f, 1.0f);
+
+    //specs
+    r.specular = glm::vec3(1.0f, 0.3f, 0.3f);
+    g.specular = glm::vec3(0.3f, 1.0f, 0.3f);
+    b.specular = glm::vec3(0.3f, 0.3f, 1.0f);
+
+    //cfloats
+    r.constant = g.constant = b.constant = 1.0f;
+    r.linear = g.linear = b.linear = 0.09f;
+    r.quadratic = g.quadratic = b.quadratic = 0.032f;
+
+    pointLights.push_back(r);
+    pointLights.push_back(g);
+    pointLights.push_back(b);
 }
 
 bool App::init()
@@ -379,6 +390,7 @@ bool App::init()
     
     init_assets();
     init_hm();
+    init_pl();
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthFunc(GL_LEQUAL);
@@ -487,6 +499,19 @@ int App::run(void)
         int i = 0;
         glBindTextureUnit(i, hmapTex);
         my_shader.setUniform("tex0", i);
+
+        for (int i = 0; i < pointLights.size(); i++) {
+            glm::vec3 plViewPos = glm::vec3(window->cam->getViewMatrix() * glm::vec4(pointLights[i].position, 1.0));
+
+            my_shader.setUniform("pointLights[" + std::to_string(i) + "].Pposition", plViewPos);
+            my_shader.setUniform("pointLights[" + std::to_string(i) + "].Pambient", pointLights[i].ambient);
+            my_shader.setUniform("pointLights[" + std::to_string(i) + "].Pdiffuse", pointLights[i].diffuse);
+            my_shader.setUniform("pointLights[" + std::to_string(i) + "].Pspecular", pointLights[i].specular);
+
+            my_shader.setUniform("pointLights[" + std::to_string(i) + "].Pconstant", pointLights[i].constant);
+            my_shader.setUniform("pointLights[" + std::to_string(i) + "].Plinear", pointLights[i].linear);
+            my_shader.setUniform("pointLights[" + std::to_string(i) + "].Pquadratic", pointLights[i].quadratic);
+        }
 
         heightMap.draw(glm::vec3(0.0), glm::vec3(0.0));
 

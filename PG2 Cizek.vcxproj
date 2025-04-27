@@ -169,6 +169,7 @@
     <ClInclude Include="Mesh.hpp" />
     <ClInclude Include="Model.hpp" />
     <ClInclude Include="OBJloader.hpp" />
+    <ClInclude Include="PointLight.h" />
     <ClInclude Include="ShaderProgram.hpp" />
     <ClInclude Include="StringTools.h" />
     <ClInclude Include="WindowClass.h" />
