@@ -1,5 +1,6 @@
 #pragma once
 
+#include <opencv2/opencv.hpp>
 #include "assets.h"
 #include "WindowClass.h"
 #include "Model.hpp"
@@ -25,6 +26,7 @@ public:
 	Mesh GenHeightMap(const cv::Mat& hmap, const unsigned int mesh_step_size);
 	glm::vec2 get_subtex_st(const int x, const int y);
 	glm::vec2 get_subtex_by_height(float height);
+	float getHeightMapY(float x, float z);
 
 	~App();
 
@@ -43,6 +45,8 @@ private:
 	ShaderProgram hmapShader;
 
 	Mesh heightMap;
+	//used for getting Y coordinate for height map collision
+	cv::Mat heightMapData;
 
 	std::vector<PointLight> pointLights;
 };

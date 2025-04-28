@@ -10,6 +10,16 @@
 #include "ShaderProgram.hpp"
 #include "OBJloader.hpp"
 
+struct Collider {
+    enum Type { Sphere, Box } type;
+    glm::vec3 position;
+
+    glm::vec3 halfSize; // for box
+    glm::mat3 rotationMatrix;
+
+    float radius;       // for sphere
+};
+
 class Model {
 public:
     std::vector<Mesh> meshes;
@@ -20,6 +30,7 @@ public:
     GLuint tex_ID{};
     bool transparent{ false };
     glm::mat4 model_matrix;
+    std::vector<Collider> colliders;
     
     Model(const std::filesystem::path & filename, ShaderProgram shader, glm::vec3 origin) {
         // load mesh (all meshes) of the model, (in the future: load material of each mesh, load textures...)
@@ -53,15 +64,16 @@ public:
 
         // Compute the model matrix correctly
         this->model_matrix = glm::mat4(1.0f);
-        this->model_matrix = glm::translate(this->model_matrix, origin + offset);  // Apply object origin and additional offset
+        this->model_matrix = glm::translate(this->model_matrix, origin + offset);
         this->model_matrix = glm::rotate(this->model_matrix, glm::radians(orientation.x + rotation.x), glm::vec3(1.0, 0.0, 0.0));
         this->model_matrix = glm::rotate(this->model_matrix, glm::radians(orientation.y + rotation.y), glm::vec3(0.0, 1.0, 0.0));
         this->model_matrix = glm::rotate(this->model_matrix, glm::radians(orientation.z + rotation.z), glm::vec3(0.0, 0.0, 1.0));
 
-        // Step 2: Apply local rotation (rotates around its own Y-axis)
         this->model_matrix = glm::rotate(this->model_matrix, glm::radians(orientation.y + rotation.y) + (float)glfwGetTime(), glm::vec3(0.0, 1.0, 0.0));
+        for (auto& c : this->colliders) {
+            if (c.type == Collider::Box) c.rotationMatrix = glm::mat3(this->model_matrix);
+        }
 
-        // Combine with any additional transformation matrix (`trans`)
         this->model_matrix = trans * this->model_matrix;
 
         //shader.setUniform("mycolor", window->rgba);
@@ -89,5 +101,25 @@ public:
             glDeleteTextures(1, &tex_ID);
             tex_ID = 0;
         }
+    }
+
+    void addSphereCollider(glm::vec3 pos, float radius) {
+        Collider c;
+        c.type = Collider::Sphere;
+        c.position = pos;
+        c.radius = radius;
+        colliders.push_back(c);
+    }
+
+    void addBoxCollider(glm::vec3 pos, glm::vec3 halfsize) {
+        Collider c;
+        c.type = Collider::Box;
+        c.position = pos;
+        c.halfSize = halfsize;
+        colliders.push_back(c);
+    }
+
+    glm::vec3 getColliderWorldPosition(const Collider& c) const {
+        return glm::vec3(this->model_matrix * glm::vec4(c.position, 1.0f));
     }
 };

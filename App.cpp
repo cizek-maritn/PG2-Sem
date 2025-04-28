@@ -76,11 +76,13 @@ void App::init_assets(void) {
     glBindTexture(GL_TEXTURE_2D, tex);
 
     my_model.tex_ID = tex;
+    //my_model.addBoxCollider(glm::vec3(0.0f), glm::vec3(0.5f));
 
     //transparent object
     Model trans_model = Model(objectPath, my_shader, glm::vec3(2.0f));
     trans_model.tex_ID = tex;
     trans_model.transparent = true;
+    trans_model.addBoxCollider(glm::vec3(2.0f), glm::vec3(0.5f));
 
     Model tree_model = Model(treePath, my_shader, glm::vec3(537.0f, 254.0f, 594.0f));
     //Model tree_model = Model(treePath, my_shader, glm::vec3(4.0f, 4.0f, 4.0f));
@@ -165,6 +167,7 @@ void App::init_hm(void)
 
         heightMap = GenHeightMap(hmap, 10); //image, step size
         std::cout << "Note: height map vertices: " << heightMap.vertices.size() << std::endl;
+        heightMapData = hmap.clone();
     }
 }
 
@@ -276,6 +279,32 @@ glm::vec2 App::get_subtex_by_height(float height)
         return get_subtex_st(2, 0); //soil
     else
         return get_subtex_st(0, 0); //grass
+}
+
+float App::getHeightMapY(float x, float z) {
+    //bilinear interpolation
+    int x0 = (int)floor(x);
+    int x1 = x0 + 1;
+    int z0 = (int)floor(z);
+    int z1 = z0 + 1;
+
+    x0 = glm::clamp(x0, 0, heightMapData.cols - 1);
+    x1 = glm::clamp(x1, 0, heightMapData.cols - 1);
+    z0 = glm::clamp(z0, 0, heightMapData.rows - 1);
+    z1 = glm::clamp(z1, 0, heightMapData.rows - 1);
+
+    float h00 = (float)heightMapData.at<uchar>(cv::Point(x0, z0));
+    float h10 = (float)heightMapData.at<uchar>(cv::Point(x1, z0));
+    float h01 = (float)heightMapData.at<uchar>(cv::Point(x0, z1));
+    float h11 = (float)heightMapData.at<uchar>(cv::Point(x1, z1));
+
+    float tx = x - (float)x0;
+    float tz = z - (float)z0;
+
+    float hx0 = glm::mix(h00, h10, tx);
+    float hx1 = glm::mix(h01, h11, tx);
+
+    return glm::mix(hx0, hx1, tz);
 }
 
 void App::init_pl() {
@@ -437,6 +466,7 @@ int App::run(void)
     }*/
 
     while (!glfwWindowShouldClose(window->getWindow())) {
+
         if (fps.secondPassed()) {
             std::cout << "FPS: " << "\t" << fps.getFrames() << std::endl;
             fps.setFrames(0);
@@ -448,8 +478,12 @@ int App::run(void)
         float currentFrameTime = glfwGetTime();
         deltaTime = currentFrameTime - lastFrameTime;
         lastFrameTime = currentFrameTime;
-
+        
         window->cam->processInput(window->getWindow(), deltaTime);
+
+        //get hmap Y coord with added height ("eye level")
+        float hmapY = getHeightMapY(window->cam->Position.x, window->cam->Position.z) + 2.0f;
+        window->cam->clampY(hmapY);
 
         std::vector<Model*> transparent;    // temporary, vector of pointers to transparent objects
         transparent.reserve(scene.size());  // reserve size for all objects to avoid reallocation
@@ -520,6 +554,85 @@ int App::run(void)
         my_shader.setUniform("tex0", 0);
 
         for (auto& [name, model] : scene) {
+            for (const auto& c : model.colliders) {
+                glm::vec3 cPos = model.getColliderWorldPosition(c);
+                //std::cout << cPos << std::endl;
+
+                if (c.type == Collider::Sphere) {
+                    glm::vec3 collisionNormal = glm::normalize(window->cam->getPosition() - cPos);
+                    float distance = glm::length(window->cam->getPosition() - cPos);
+                    float penetration = (window->cam->camRadius + c.radius) - distance;
+
+                    if (penetration > 0.0f) {
+                        window->cam->Position += collisionNormal * penetration;
+                    }
+                    
+                }
+                else if (c.type == Collider::Box) {
+                    glm::vec3 relCenter = glm::transpose(c.rotationMatrix) * (window->cam->getPosition() - c.position);
+                    glm::vec3 collisionNormal = glm::normalize(window->cam->getPosition() - cPos);
+                    bool penCheck = true;
+
+                    glm::vec3 closestPoint = glm::clamp(relCenter, -c.halfSize, c.halfSize);
+                    glm::vec3 delta = relCenter-closestPoint;
+
+                    if (abs(window->cam->getPosition().y - (c.position.y + c.halfSize.y + window->cam->camRadius)) < 0.15f) {
+                        if (relCenter.x >= -c.halfSize.x && relCenter.x <= c.halfSize.x &&
+                            relCenter.z >= -c.halfSize.z && relCenter.z <= c.halfSize.z) {
+
+                            window->cam->clampY(c.position.y + c.halfSize.y + window->cam->camRadius);
+                            penCheck = false;
+                        }
+                    }
+
+                    float distance = glm::length(delta);
+                    float pen = window->cam->camRadius - distance;
+                    
+                    if (pen > 0.05f && penCheck) {
+                        glm::vec3 pushDir;
+                        float pushAmount = 0.0f;
+                        if (pen > 0.4f) {
+                            float penX = window->cam->camRadius - abs(delta.x);
+                            float penY = window->cam->camRadius - abs(delta.y);
+                            float penZ = window->cam->camRadius - abs(delta.z);
+
+                            if (penX < penY && penX < penZ) {
+                                pushDir = glm::vec3((delta.x > 0.0f ? 1.0f : -1.0f), 0.0f, 0.0f);
+                                pushAmount = (abs(delta.x) - c.halfSize.x) + window->cam->camRadius + 0.01f;
+                            }
+                            else if (penY < penX && penY < penZ) {
+                                pushDir = glm::vec3(0.0f, (delta.y > 0.0f ? 1.0f : -1.0f), 0.0f);
+                                pushAmount = (abs(delta.y) - c.halfSize.y) + window->cam->camRadius + 0.01f;
+                            }
+                            else {
+                                pushDir = glm::vec3(0.0f, 0.0f, (delta.z > 0.0f ? 1.0f : -1.0f));
+                                pushAmount = (abs(delta.z) - c.halfSize.z) + window->cam->camRadius + 0.01f;
+                            }
+
+                            window->cam->Position += c.rotationMatrix * (pushDir * pushAmount);
+
+                        }
+                        else {
+                            float penX = window->cam->camRadius - abs(delta.x);
+                            float penY = window->cam->camRadius - abs(delta.y);
+                            float penZ = window->cam->camRadius - abs(delta.z);
+
+                            float extra = 0.1f;
+
+                            if (penX < penY && penX < penZ) {
+                                window->cam->Position.x += (delta.x > 0.0f ? 1.0f : -1.0f) * (penX + extra);
+                            }
+                            else if (penY < penX && penY < penZ) {
+                                window->cam->Position.y += (delta.y > 0.0f ? 1.0f : -1.0f) * (penY + extra);
+                            }
+                            else {
+                                window->cam->Position.z += (delta.z > 0.0f ? 1.0f : -1.0f) * (penZ + extra);
+                            }
+                        }
+                    }
+                }
+            }
+
             if (!model.transparent) {
                 model.draw(glm::vec3(0.0), glm::vec3(0.0), glm::mat4(1.0f), window);
             }

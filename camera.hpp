@@ -35,6 +35,7 @@ public:
     GLfloat Sprint;
 
     Camera(glm::vec3 position);
+    float camRadius = 1.0f;
 
     glm::mat4 getViewMatrix();
     glm::mat4 getProjMatrix();
@@ -43,6 +44,9 @@ public:
     void processMouseMovement(GLfloat xoffset, GLfloat yoffset, GLboolean constraintPitch);
     glm::vec3 getPosition();
 
+    void clampY(float y);
+    bool grounded = true;
 private:
     void updateCameraVectors();
+    float velocityY=0.0f;
 };

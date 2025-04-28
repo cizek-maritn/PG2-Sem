@@ -42,22 +42,35 @@ void Camera::processInput(GLFWwindow* window, GLfloat deltaTime) {
 
 	float speed = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ? Sprint : 1) * MovementSpeed * deltaTime;
 
+	float grav = 20.0f;
+	velocityY -= grav * deltaTime;
+
+	glm::vec3 flatFront = glm::normalize(glm::vec3(this->Front.x, 0.0f, this->Front.z));
+	glm::vec3 flatRight = glm::normalize(glm::cross(flatFront, this->Up));
+
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		this->Position += speed * this->Front;
+		this->Position += speed * flatFront;
 		//std::cout << glm::to_string(this->Position) << std::endl;
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		this->Position -= speed * this->Front;
+		this->Position -= speed * flatFront;
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		this->Position -= glm::normalize(glm::cross(this->Front, this->Up)) * speed;
+		this->Position -= speed * flatRight;
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		this->Position += glm::normalize(glm::cross(this->Front, this->Up)) * speed;
+		this->Position += speed * flatRight;
 	}
+
+	if (grounded && glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+		velocityY = 10.0f;
+		grounded = false;
+	}
+
+	this->Position.y += velocityY*deltaTime;
 }
 
 void Camera::processMouseMovement(GLfloat xoffset, GLfloat yoffset, GLboolean constraintPitch) {
@@ -91,4 +104,12 @@ void Camera::updateCameraVectors() {
 
 glm::vec3 Camera::getPosition() {
 	return this->Position;
+}
+
+void Camera::clampY(float y) {
+	if (Position.y < y) {
+		Position.y = y;
+		velocityY = 0.0f;
+		grounded = true;
+	}
 }
