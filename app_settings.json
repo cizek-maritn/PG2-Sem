@@ -7,5 +7,7 @@
   "antialiasing": {
     "enabled": false,
     "level": 4
-  }
+  },
+  "vsync": false,
+  "fullscreen": false
 }

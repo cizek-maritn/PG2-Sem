@@ -27,6 +27,7 @@ public:
 	glm::vec2 get_subtex_st(const int x, const int y);
 	glm::vec2 get_subtex_by_height(float height);
 	float getHeightMapY(float x, float z);
+	void init_imgui(void);
 
 	~App();
 

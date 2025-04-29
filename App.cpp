@@ -19,6 +19,11 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 
+//imgui
+#include <imgui.h>
+#include <imgui_impl_glfw.h> 
+#include <imgui_impl_opengl3.h>
+
 #include "assets.h"
 #include "camera.hpp"
 #include "LoggerClass.h"
@@ -30,6 +35,14 @@
 App::App()
 {
     LoggerClass::info("App has started.");
+}
+
+void App::init_imgui(void) {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui_ImplGlfw_InitForOpenGL(window->getWindow(), true);
+    ImGui_ImplOpenGL3_Init();
+    std::cout << "ImGUI version: " << ImGui::GetVersion() << "\n";
 }
 
 void App::init_assets(void) {
@@ -82,7 +95,7 @@ void App::init_assets(void) {
     Model trans_model = Model(objectPath, my_shader, glm::vec3(2.0f));
     trans_model.tex_ID = tex;
     trans_model.transparent = true;
-    trans_model.addBoxCollider(glm::vec3(2.0f), glm::vec3(0.5f));
+    trans_model.addSphereCollider(glm::vec3(2.0f), 1.0f);
 
     Model tree_model = Model(treePath, my_shader, glm::vec3(537.0f, 254.0f, 594.0f));
     //Model tree_model = Model(treePath, my_shader, glm::vec3(4.0f, 4.0f, 4.0f));
@@ -352,6 +365,8 @@ bool App::init()
     int y = 600;
     bool aa_enabled = false;
     int aa_level = 4;
+    bool vsync = false;
+    bool fullscreen = false;
 
     std::ifstream sett_file("app_settings.json");
     if (!sett_file.is_open()) {
@@ -380,6 +395,14 @@ bool App::init()
         if (settings["antialiasing"]["level"].is_number_integer()) {
             aa_level = settings["antialiasing"]["level"].template get<int>();
         }
+
+        if (settings["vsync"].is_boolean()) {
+            vsync = settings["vsync"].template get<bool>();
+        }
+
+        if (settings["fullscreen"].is_boolean()) {
+            fullscreen = settings["fullscreen"].template get<bool>();
+        }
     }
 
     if (aa_enabled) {
@@ -396,8 +419,10 @@ bool App::init()
     std::cout << "app name: " << name << std::endl;
     std::cout << "[x,y] = [" << x << ',' << y << "]\n";
     std::cout << "Antialiasing: " << (aa_enabled ? "Enabled" : "Disabled") << " (Level: " << aa_level << ")\n";
+    std::cout << "VSync: " << (vsync ? "Enabled" : "Disabled") << std::endl;
+    std::cout << "Fullscreen: " << (fullscreen ? "Enabled" : "Disabled") << std::endl;
 
-    window = new WindowClass(x, y, name.c_str(), NULL, NULL, aa_enabled, aa_level);
+    window = new WindowClass(x, y, name.c_str(), fullscreen, vsync, aa_enabled, aa_level);
 
     glewInit();
     wglewInit();
@@ -420,6 +445,7 @@ bool App::init()
     init_assets();
     init_hm();
     init_pl();
+    init_imgui();
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthFunc(GL_LEQUAL);
@@ -449,6 +475,7 @@ void App::report(void) {
 int App::run(void)
 {
     FPS fps;
+    int fpsCount = 0;
     DebugInfo debug;
     window->rgba = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 
@@ -469,7 +496,24 @@ int App::run(void)
 
         if (fps.secondPassed()) {
             std::cout << "FPS: " << "\t" << fps.getFrames() << std::endl;
+            fpsCount = fps.getFrames();
             fps.setFrames(0);
+        }
+
+        if (window->show_imgui) {
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+
+            ImGui::SetNextWindowPos(ImVec2(10, 10));
+            ImGui::SetNextWindowSize(ImVec2(250, 100));
+
+            ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+            ImGui::Text("V-Sync: %s", window->getVsync() ? "ON" : "OFF");
+            ImGui::Text("FPS: %d", fpsCount);
+            ImGui::Text("(press RMB to release mouse)");
+            ImGui::Text("(hit D to show/hide info)");
+            ImGui::End();
         }
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -559,8 +603,8 @@ int App::run(void)
                 //std::cout << cPos << std::endl;
 
                 if (c.type == Collider::Sphere) {
-                    glm::vec3 collisionNormal = glm::normalize(window->cam->getPosition() - cPos);
-                    float distance = glm::length(window->cam->getPosition() - cPos);
+                    glm::vec3 collisionNormal = glm::normalize(window->cam->getPosition() - c.position);
+                    float distance = glm::length(window->cam->getPosition() - c.position);
                     float penetration = (window->cam->camRadius + c.radius) - distance;
 
                     if (penetration > 0.0f) {
@@ -658,6 +702,11 @@ int App::run(void)
         }
 
         glDepthMask(GL_TRUE);
+
+        if (window->show_imgui) {
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        }
 
         glfwSwapBuffers(window->getWindow());
         glfwPollEvents();

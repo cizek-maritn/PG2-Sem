@@ -37,6 +37,7 @@ public:
 	static float lastY;
 
 	int useSpotlight=0;
+	bool show_imgui{ true };
 
 private:
 	static void frameBufferSizeCallback(GLFWwindow* window, int w, int h);
