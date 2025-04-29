@@ -11,8 +11,9 @@ float WindowClass::lastX = 0.0f;
 float WindowClass::lastY = 0.0f;
 bool WindowClass::mouseMove = true;
 std::unique_ptr<Camera> WindowClass::cam = nullptr;
+bool WindowClass::cursor = false;
 
-WindowClass::WindowClass(int w, int h, const char* name, bool fullscreen, bool vsync, bool aa, int aa_level) : fullscreen(fullscreen), vsync(vsync) {
+WindowClass::WindowClass(int w, int h, const char* name, bool fullscreen, bool vsync, bool aa, int aa_level) : fullscreen(fullscreen), vsync(vsync), aa_enabled(aa), aa_level(aa_level) {
 	if (!glfwInit()) {
 		std::cerr << "GLFW not initialized\n";
 		std::exit(-1);
@@ -100,6 +101,14 @@ bool WindowClass::getVsync() const {
 	return vsync;
 }
 
+bool WindowClass::getAA() const {
+	return aa_enabled;
+}
+
+int WindowClass::getAAlevel() const {
+	return aa_level;
+}
+
 void WindowClass::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	WindowClass* instance = static_cast<WindowClass*>(glfwGetWindowUserPointer(window));
 	if (instance) {
@@ -126,23 +135,24 @@ void WindowClass::mouseMovementCallback(GLFWwindow* window, double x, double y) 
 		LoggerClass::warning("No camera assigned to window.");
 		return;
 	}
+	if (!WindowClass::cursor) {
+		float xpos = static_cast<float>(x);
+		float ypos = static_cast<float>(y);
 
-	float xpos = static_cast<float>(x);
-	float ypos = static_cast<float>(y);
+		if (WindowClass::mouseMove) {
+			WindowClass::lastX = xpos;
+			WindowClass::lastY = ypos;
+			WindowClass::mouseMove = false;
+		}
 
-	if (WindowClass::mouseMove) {
-		WindowClass::lastX = xpos;
-		WindowClass::lastY = ypos;
-		WindowClass::mouseMove = false;
+		float xoffset = xpos - lastX;
+		float yoffset = lastY - ypos;
+
+		lastX = xpos;
+		lastY = ypos;
+
+		WindowClass::cam->processMouseMovement(xoffset, yoffset, GL_TRUE);
 	}
-
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos;
-
-	lastX = xpos;
-	lastY = ypos;
-
-	WindowClass::cam->processMouseMovement(xoffset, yoffset, GL_TRUE);
 }
 
 void WindowClass::frameBufferSizeCallback(GLFWwindow* window, int w, int h) {
@@ -182,10 +192,24 @@ void WindowClass::handleKeyPress(int key, int action) {
 		else this->useSpotlight = 1;
 		//std::cout << this->useSpotlight << std::endl;
 		break;
-	case GLFW_KEY_N:
-		changeBlue(-0.1f);
+	case GLFW_KEY_P:
+		aa_enabled = !aa_enabled;
+		break;
+	case GLFW_KEY_O:
+		if (aa_enabled) {
+			if (aa_level == 2) aa_level = 4;
+			else if (aa_level == 4) aa_level = 8;
+			else aa_level = 2;
+		}
+		break;
+	case GLFW_KEY_C:
+		controls = !controls;
+		break;
+	case GLFW_KEY_H:
+		show_imgui = !show_imgui;
 		break;
 	}
+
 }
 
 void WindowClass::handleMouseButtonEvent(int button, int action) {
@@ -201,10 +225,22 @@ void WindowClass::handleMouseButtonEvent(int button, int action) {
 void WindowClass::handleMousePress(int button, int action) {
 	switch (button) {
 	case GLFW_MOUSE_BUTTON_LEFT:
-		changeGreen(0.1f);
+		//changeGreen(0.1f);
 		break;
 	case GLFW_MOUSE_BUTTON_RIGHT:
-		changeGreen(-0.1f);
+		if (cursor) {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			cursor = !cursor;
+			double xpos, ypos;
+			glfwGetCursorPos(window, &xpos, &ypos);
+			lastX = static_cast<float>(xpos);
+			lastY = static_cast<float>(ypos);
+			mouseMove = true;
+		}
+		else {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			cursor = !cursor;
+		}
 		break;
 	}
 }
@@ -213,14 +249,4 @@ void WindowClass::handleScrollEvent(double x, double y) {
 	this->cam->FOV -= 5 * y;
 	if (this->cam->FOV > 90.0f) this->cam->FOV = 90.0f;
 	if (this->cam->FOV < 30.0f) this->cam->FOV = 30.0f;
-}
-
-void WindowClass::changeBlue(double val) {
-	std::cout << this->cam->getPosition() << std::endl;
-}
-
-void WindowClass::changeGreen(double val) {
-	rgba.g += val;
-	if (rgba.g < 0.0f) rgba.g = 0.0f;
-	if (rgba.g > 1.0f) rgba.g = 1.0f;
 }

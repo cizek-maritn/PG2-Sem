@@ -477,7 +477,6 @@ int App::run(void)
     FPS fps;
     int fpsCount = 0;
     DebugInfo debug;
-    window->rgba = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 
     LoggerClass::debug("Debug output: " + (debug.available ? std::string("yes") : std::string("no")));
 
@@ -495,7 +494,7 @@ int App::run(void)
     while (!glfwWindowShouldClose(window->getWindow())) {
 
         if (fps.secondPassed()) {
-            std::cout << "FPS: " << "\t" << fps.getFrames() << std::endl;
+            //std::cout << "FPS: " << "\t" << fps.getFrames() << std::endl;
             fpsCount = fps.getFrames();
             fps.setFrames(0);
         }
@@ -506,13 +505,32 @@ int App::run(void)
             ImGui::NewFrame();
 
             ImGui::SetNextWindowPos(ImVec2(10, 10));
-            ImGui::SetNextWindowSize(ImVec2(250, 100));
+            ImGui::SetNextWindowSize(ImVec2(250, 200));
 
             ImGui::Begin("Info", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+            ImGui::Text("press RMB to release mouse");
             ImGui::Text("V-Sync: %s", window->getVsync() ? "ON" : "OFF");
             ImGui::Text("FPS: %d", fpsCount);
-            ImGui::Text("(press RMB to release mouse)");
-            ImGui::Text("(hit D to show/hide info)");
+            ImGui::Text("MSAA changes require restarting");
+            ImGui::Text("MSAA: %s", window->getAA() ? "ON" : "OFF");
+            if (window->getAA()) {
+                ImGui::Text("MSAA level: %d", window->getAAlevel());
+            }
+            ImGui::Text("hit C to show/hide controls");
+            if (window->controls) {
+                ImGui::Text("player movement - W, A, S, D");
+                ImGui::Text("jump - SPACE");
+                ImGui::Text("sprint - LEFT SHIFT");
+                ImGui::Text("vsync - V");
+                ImGui::Text("fullscreen - F");
+                ImGui::Text("toggle flashlight - B");
+                ImGui::Text("toggle MSAA - P");
+                ImGui::Text("change MSAA level - O");
+                ImGui::Text("toggle GUI - H");
+                ImGui::Text("change FOV - SCROLL WHEEL");
+                ImGui::Text("camera movement - MOUSE MOVEMENT");
+                ImGui::Text("exit game - ESCAPE");
+            }
             ImGui::End();
         }
 
@@ -711,7 +729,40 @@ int App::run(void)
         glfwSwapBuffers(window->getWindow());
         glfwPollEvents();
     }
+
+    updateConfig();
+
     return 0;
+}
+
+void App::updateConfig() {
+    std::ifstream inFile("app_settings.json");
+    nlohmann::json config;
+    if (inFile.is_open()) {
+        inFile >> config;
+        int w;
+        int h;
+        glfwGetWindowSize(window->getWindow(), &w, &h);
+        config["default_resolution"]["x"] = w;
+        config["default_resolution"]["y"] = h;
+
+        config["antialiasing"]["enabled"] = window->getAA();
+        config["antialiasing"]["level"] = window->getAAlevel();
+
+        config["vsync"] = window->getVsync();
+        config["fullscreen"] = window->getFullscreen();
+    }
+    else {
+        std::cerr << "Could not open config file.\n";
+    }
+
+    std::ofstream outFile("app_settings.json");
+    if (outFile.is_open()) {
+        outFile << config.dump(2);
+    }
+    else {
+        std::cerr << "Could not write to config file.\n";
+    }
 }
 
 App::~App()

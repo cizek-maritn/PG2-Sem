@@ -25,19 +25,21 @@ public:
 	static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 	static void mouseMovementCallback(GLFWwindow* window, double x, double y);
 
-	glm::vec4 rgba = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-
 	bool getFullscreen() const;
 	bool getVsync() const;
+	bool getAA() const;
+	int getAAlevel() const;
 	GLFWwindow* getWindow() const;
 
 	static std::unique_ptr<Camera> cam;
 	static bool mouseMove;
 	static float lastX;
 	static float lastY;
+	static bool cursor;
 
 	int useSpotlight=0;
 	bool show_imgui{ true };
+	bool controls{ false };
 
 private:
 	static void frameBufferSizeCallback(GLFWwindow* window, int w, int h);
@@ -47,14 +49,13 @@ private:
 
 	bool fullscreen;
 	bool vsync;
+	bool aa_enabled;
+	int aa_level;
 
 	int prevW;
 	int prevH;
 	int prevX;
 	int prevY;
-
-	void changeBlue(double val);
-	void changeGreen(double val);
 };
 
 #endif

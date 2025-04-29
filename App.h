@@ -50,4 +50,6 @@ private:
 	cv::Mat heightMapData;
 
 	std::vector<PointLight> pointLights;
+
+	void updateConfig();
 };
