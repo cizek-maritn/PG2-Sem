@@ -66,7 +66,7 @@ void Camera::processInput(GLFWwindow* window, GLfloat deltaTime) {
 	}
 
 	if (grounded && glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-		velocityY = 10.0f;
+		velocityY = 20.0f;
 		grounded = false;
 	}
 

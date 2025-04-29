@@ -56,7 +56,7 @@ void App::init_assets(void) {
 
     my_shader = ShaderProgram(vertexShaderPath, fragmentShaderPath);
 
-    window->cam = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 1.0f));
+    window->cam = std::make_unique<Camera>(glm::vec3(550.0f, 265.0f, 580.0f));
 
     my_shader.activate();
 
@@ -82,28 +82,61 @@ void App::init_assets(void) {
     my_shader.setUniform("tex0", 0);
 
     // model: load model file, assign shader used to draw a model
-    Model my_model = Model(objectPath, my_shader, glm::vec3(0.0f));
+    Model my_model = Model(objectPath, my_shader, glm::vec3(555.0f, 256.0f, 575.0f));
 
     GLuint tex = textureInit(texturePath);
 
     glBindTexture(GL_TEXTURE_2D, tex);
 
     my_model.tex_ID = tex;
-    //my_model.addBoxCollider(glm::vec3(0.0f), glm::vec3(0.5f));
+    my_model.addBoxCollider(glm::vec3(555.0f, 256.0f, 575.0f), glm::vec3(0.5f));
+
+    Model my_model2 = Model(objectPath, my_shader, glm::vec3(500.0f, 256.0f, 575.0f));
+    my_model2.tex_ID = tex;
+    my_model2.addBoxCollider(glm::vec3(500.0f, 256.0f, 575.0f), glm::vec3(0.5f));
 
     //transparent object
-    Model trans_model = Model(objectPath, my_shader, glm::vec3(2.0f));
+    Model trans_model = Model(objectPath, my_shader, glm::vec3(525.0f, 255.0f, 580.0f));
     trans_model.tex_ID = tex;
     trans_model.transparent = true;
-    trans_model.addSphereCollider(glm::vec3(2.0f), 1.0f);
+    trans_model.rotate = true;
+    trans_model.addSphereCollider(glm::vec3(525.0f, 255.0f, 575.0f), 1.0f);
+
+    Model trans_model2 = Model(objectPath, my_shader, glm::vec3(520.0f, 255.0f, 585.0f));
+    trans_model2.tex_ID = tex;
+    trans_model2.transparent = true;
+    trans_model2.addSphereCollider(glm::vec3(520.0f, 255.0f, 570.0f), 1.0f);
 
     Model tree_model = Model(treePath, my_shader, glm::vec3(537.0f, 254.0f, 594.0f));
-    //Model tree_model = Model(treePath, my_shader, glm::vec3(4.0f, 4.0f, 4.0f));
+
+    Model moving_model = Model(objectPath, my_shader, glm::vec3(510.0f, 256.0f, 575.0f));
+    moving_model.tex_ID = tex;
+    moving_model.addBoxCollider(glm::vec3(510.0f, 256.0f, 575.0f), glm::vec3(0.5f));
+    moving_model.movement = glm::vec3(5.0f, 0.0f, 0.0f);
+    moving_model.trackBegin = moving_model.origin;
+    moving_model.trackEnd = glm::vec3(545.0f, 256.0f, 575.0f);
+    moving_model.moving = true;
+
+    Model moving_model2 = Model(objectPath, my_shader, glm::vec3(520.0f, 254.0f, 575.0f));
+    moving_model2.tex_ID = tex;
+    moving_model2.addBoxCollider(glm::vec3(520.0f, 254.0f, 575.0f), glm::vec3(0.5f));
+    moving_model2.movement = glm::vec3(0.0f, 0.0f, 1.0f);
+    moving_model2.trackBegin = moving_model2.origin;
+    moving_model2.trackEnd = glm::vec3(520.0f, 254.0f, 580.0f);
+    moving_model2.moving = true;
+    moving_model2.rotate = true;
 
     // put model to scene
-    scene.insert({ "my_first_object", my_model });
-    scene.insert({ "trans_object", trans_model });
-    scene.insert({ "tree", tree_model });
+    //stationary non-transparent models
+    scene.insert({ "s_box01", my_model });
+    scene.insert({ "s_box02", my_model2 });
+    scene.insert({ "s_tree", tree_model });
+    //stationary trnsparent models
+    scene.insert({ "t_box01", trans_model });
+    scene.insert({ "t_box02", trans_model2 });
+    //moving non-transparent models
+    scene.insert({ "m_box01", moving_model });
+    scene.insert({ "m_box02", moving_model2 });
 }
 
 GLuint App::textureInit(const std::filesystem::path& file_name)
@@ -544,7 +577,7 @@ int App::run(void)
         window->cam->processInput(window->getWindow(), deltaTime);
 
         //get hmap Y coord with added height ("eye level")
-        float hmapY = getHeightMapY(window->cam->Position.x, window->cam->Position.z) + 2.0f;
+        float hmapY = getHeightMapY(window->cam->Position.x, window->cam->Position.z) + window->cam->camRadius;
         window->cam->clampY(hmapY);
 
         std::vector<Model*> transparent;    // temporary, vector of pointers to transparent objects
@@ -616,6 +649,10 @@ int App::run(void)
         my_shader.setUniform("tex0", 0);
 
         for (auto& [name, model] : scene) {
+            //if (model.moving) {
+            //    std::cout << model.trackBegin << std::endl;
+            //    std::cout << model.trackEnd << std::endl;
+            //}
             for (const auto& c : model.colliders) {
                 glm::vec3 cPos = model.getColliderWorldPosition(c);
                 //std::cout << cPos << std::endl;
@@ -643,6 +680,7 @@ int App::run(void)
                             relCenter.z >= -c.halfSize.z && relCenter.z <= c.halfSize.z) {
 
                             window->cam->clampY(c.position.y + c.halfSize.y + window->cam->camRadius);
+                            window->cam->Position += model.moveDelta;
                             penCheck = false;
                         }
                     }
@@ -696,7 +734,7 @@ int App::run(void)
             }
 
             if (!model.transparent) {
-                model.draw(glm::vec3(0.0), glm::vec3(0.0), glm::mat4(1.0f), window);
+                model.draw(glm::vec3(0.0), glm::vec3(0.0), glm::mat4(1.0f), window, deltaTime);
             }
             else {
                 transparent.emplace_back(&model); // save pointer for painters algorithm
@@ -716,7 +754,7 @@ int App::run(void)
         my_shader.setUniform("alpha", 0.5f);
 
         for (auto p : transparent) {
-            p->draw(glm::vec3(0.0), glm::vec3(0.0), glm::mat4(1.0f), window);
+            p->draw(glm::vec3(0.0), glm::vec3(0.0), glm::mat4(1.0f), window, deltaTime);
         }
 
         glDepthMask(GL_TRUE);

@@ -15,7 +15,7 @@ struct Collider {
     glm::vec3 position;
 
     glm::vec3 halfSize; // for box
-    glm::mat3 rotationMatrix;
+    glm::mat3 rotationMatrix{glm::mat3(1.0f)};
 
     float radius;       // for sphere
 };
@@ -31,6 +31,15 @@ public:
     bool transparent{ false };
     glm::mat4 model_matrix;
     std::vector<Collider> colliders;
+    bool rotate{ false };
+
+    glm::vec3 movement{glm::vec3(0.0f)};
+    glm::vec3 trackBegin{ glm::vec3(0.0f) };
+    glm::vec3 trackEnd{ glm::vec3(0.0f) };
+    bool moving{ false };
+    bool forward{ true };
+    glm::vec3 moveDelta{};
+    glm::vec3 lastOrigin{};
     
     Model(const std::filesystem::path & filename, ShaderProgram shader, glm::vec3 origin) {
         // load mesh (all meshes) of the model, (in the future: load material of each mesh, load textures...)
@@ -55,23 +64,50 @@ public:
         // origin += glm::vec3(3,0,0) * delta_t; // s = s0 + v*dt
     }
     
-    void draw(glm::vec3 const & offset = glm::vec3(0.0), glm::vec3 const & rotation = glm::vec3(0.0f), glm::mat4 const& trans = glm::mat4(1.0f), WindowClass* window = nullptr) {
+    void draw(glm::vec3 const & offset = glm::vec3(0.0), glm::vec3 const & rotation = glm::vec3(0.0f), glm::mat4 const& trans = glm::mat4(1.0f), WindowClass* window = nullptr, float deltaTime = 0.0f) {
         /*GLint activeTexture;
         glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTexture);
         std::cout << "Active Texture Unit: " << activeTexture << ", Bound Texture ID: " << tex_ID << std::endl;*/
+        if (this->moving) {
+            this->lastOrigin = this->origin;
+            if (this->forward) {
+                this->origin += this->movement * deltaTime;
+                if (glm::distance(this->origin, this->trackEnd) <= 0.05f) { 
+                    this->origin = this->trackEnd;
+                    this->forward = false;
+                }
+            }
+            else {
+                this->origin -= this->movement * deltaTime;
+                if (glm::distance(this->origin, this->trackBegin) <= 0.05f) {
+                    this->origin = this->trackBegin;
+                    this->forward = true;
+                }
+            }
+            this->moveDelta = this->origin - this->lastOrigin;
+            for (auto& c : this->colliders) {
+                c.position = this->origin;
+            }
+        }
+        else {
+            this->moveDelta = glm::vec3(0.0f);
+        }
 
         shader.activate();
 
         // Compute the model matrix correctly
         this->model_matrix = glm::mat4(1.0f);
         this->model_matrix = glm::translate(this->model_matrix, origin + offset);
+
         this->model_matrix = glm::rotate(this->model_matrix, glm::radians(orientation.x + rotation.x), glm::vec3(1.0, 0.0, 0.0));
         this->model_matrix = glm::rotate(this->model_matrix, glm::radians(orientation.y + rotation.y), glm::vec3(0.0, 1.0, 0.0));
         this->model_matrix = glm::rotate(this->model_matrix, glm::radians(orientation.z + rotation.z), glm::vec3(0.0, 0.0, 1.0));
 
-        this->model_matrix = glm::rotate(this->model_matrix, glm::radians(orientation.y + rotation.y) + (float)glfwGetTime(), glm::vec3(0.0, 1.0, 0.0));
-        for (auto& c : this->colliders) {
-            if (c.type == Collider::Box) c.rotationMatrix = glm::mat3(this->model_matrix);
+        if (rotate) {
+            this->model_matrix = glm::rotate(this->model_matrix, glm::radians(orientation.y + rotation.y) + (float)glfwGetTime(), glm::vec3(0.0, 1.0, 0.0));
+            for (auto& c : this->colliders) {
+                if (c.type == Collider::Box) c.rotationMatrix = glm::mat3(this->model_matrix);
+            }
         }
 
         this->model_matrix = trans * this->model_matrix;
