@@ -56,7 +56,7 @@ void App::init_assets(void) {
 
     my_shader = ShaderProgram(vertexShaderPath, fragmentShaderPath);
 
-    window->cam = std::make_unique<Camera>(glm::vec3(550.0f, 265.0f, 580.0f));
+    window->cam = std::make_unique<Camera>(glm::vec3(550.0f, 273.0f, 580.0f));
 
     my_shader.activate();
 
@@ -108,6 +108,13 @@ void App::init_assets(void) {
     trans_model2.addSphereCollider(glm::vec3(520.0f, 255.0f, 570.0f), 1.0f);
 
     Model tree_model = Model(treePath, my_shader, glm::vec3(537.0f, 254.0f, 594.0f));
+    //obviously not perfect collision (branches dont have collision), but i think good enough for a demo
+    tree_model.addBoxCollider(glm::vec3(537.0f, 254.0f, 594.0f), glm::vec3(1.25f, 3.25f, 1.25f));
+    tree_model.addSphereCollider(glm::vec3(548.187f, 265.5f, 584.330f), 3.25f);
+    tree_model.addSphereCollider(glm::vec3(541.876f, 275.0f, 586.372f), 5.5f);
+    tree_model.addSphereCollider(glm::vec3(532.626f, 273.000f, 593.666f), 7.0f);
+    tree_model.addSphereCollider(glm::vec3(526.421f, 269.726f, 597.511f), 4.5f);
+    tree_model.addSphereCollider(glm::vec3(539.272f, 267.001f, 597.287f), 2.75f);
 
     Model moving_model = Model(objectPath, my_shader, glm::vec3(510.0f, 256.0f, 575.0f));
     moving_model.tex_ID = tex;

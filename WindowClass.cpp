@@ -225,7 +225,7 @@ void WindowClass::handleMouseButtonEvent(int button, int action) {
 void WindowClass::handleMousePress(int button, int action) {
 	switch (button) {
 	case GLFW_MOUSE_BUTTON_LEFT:
-		//changeGreen(0.1f);
+		//std::cout << cam->Position << std::endl;
 		break;
 	case GLFW_MOUSE_BUTTON_RIGHT:
 		if (cursor) {
