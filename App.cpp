@@ -100,12 +100,12 @@ void App::init_assets(void) {
     trans_model.tex_ID = tex;
     trans_model.transparent = true;
     trans_model.rotate = true;
-    trans_model.addSphereCollider(glm::vec3(525.0f, 255.0f, 575.0f), 1.0f);
+    trans_model.addSphereCollider(glm::vec3(525.0f, 255.0f, 580.0f), 1.0f);
 
     Model trans_model2 = Model(objectPath, my_shader, glm::vec3(520.0f, 255.0f, 585.0f));
     trans_model2.tex_ID = tex;
     trans_model2.transparent = true;
-    trans_model2.addSphereCollider(glm::vec3(520.0f, 255.0f, 570.0f), 1.0f);
+    trans_model2.addSphereCollider(glm::vec3(520.0f, 255.0f, 585.0f), 1.0f);
 
     Model tree_model = Model(treePath, my_shader, glm::vec3(537.0f, 254.0f, 594.0f));
     //obviously not perfect collision (branches dont have collision), but i think good enough for a demo
