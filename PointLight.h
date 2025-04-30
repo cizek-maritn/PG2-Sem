@@ -18,16 +18,21 @@ struct PointLight {
 	float linear;
 	float quadratic;
 
+	// Orbit-related
+	glm::vec3 orbitCenter;     // Where to orbit around
+	float orbitRadius = 5.0f;
+	float orbitSpeed = 1.0f;   // Radians per second
+	float orbitAngle = 0.0f;
 	OrbitMode orbitMode = OrbitMode::None;
 
-	void orbit(float t) {
-		if (orbitMode == OrbitMode::Clockwise) {
-			position.x -= sin(t) * 0.01f;
-			position.z -= cos(t) * 0.01f;
-		}
-		else if (orbitMode == OrbitMode::CounterClockwise) {
-			position.x += sin(t) * 0.01f;
-			position.z += cos(t) * 0.01f;
+	void orbit(float deltaTime) {
+		if (orbitMode != OrbitMode::None) {
+			float dir = (orbitMode == OrbitMode::Clockwise) ? -1.0f : 1.0f;
+
+			orbitAngle += dir * orbitSpeed * deltaTime;
+
+			position.x = orbitCenter.x + orbitRadius * cos(orbitAngle);
+			position.z = orbitCenter.z + orbitRadius * sin(orbitAngle);
 		}
 	}
 };

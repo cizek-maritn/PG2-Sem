@@ -369,9 +369,11 @@ void App::init_pl() {
     b.position = glm::vec3(535.0f, 254.5f, 592.0f);
 
     //orbits
-    r.orbitMode = OrbitMode::None;
     b.orbitMode = OrbitMode::Clockwise;
     g.orbitMode = OrbitMode::CounterClockwise;
+
+    g.orbitCenter = g.position;
+    b.orbitCenter = b.position;
 
     //ambients
     r.ambient = glm::vec3(0.1f, 0.0f, 0.0f);
@@ -642,7 +644,7 @@ int App::run(void)
         my_shader.setUniform("tex0", i);
 
         for (int i = 0; i < pointLights.size(); i++) {
-            pointLights[i].orbit(currentFrameTime);
+            pointLights[i].orbit(deltaTime);
 
             glm::vec3 plViewPos = glm::vec3(window->cam->getViewMatrix() * glm::vec4(pointLights[i].position, 1.0));
 
