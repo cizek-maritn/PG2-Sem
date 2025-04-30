@@ -357,9 +357,14 @@ void App::init_pl() {
     PointLight r; PointLight g; PointLight b;
 
     //positions
-    r.position = glm::vec3(4.0f, 3.0f, 0.0f);
-    g.position = glm::vec3(0.0f, 3.0f, 4.0f);
-    b.position = glm::vec3(-2.0f, 3.0f, -2.0f);
+    r.position = glm::vec3(541.0f, 254.5f, 594.0f);
+    g.position = glm::vec3(537.0f, 254.5f, 598.0f);
+    b.position = glm::vec3(535.0f, 254.5f, 592.0f);
+
+    //orbits
+    r.orbitMode = OrbitMode::None;
+    b.orbitMode = OrbitMode::Clockwise;
+    g.orbitMode = OrbitMode::CounterClockwise;
 
     //ambients
     r.ambient = glm::vec3(0.1f, 0.0f, 0.0f);
@@ -630,6 +635,8 @@ int App::run(void)
         my_shader.setUniform("tex0", i);
 
         for (int i = 0; i < pointLights.size(); i++) {
+            pointLights[i].orbit(currentFrameTime);
+
             glm::vec3 plViewPos = glm::vec3(window->cam->getViewMatrix() * glm::vec4(pointLights[i].position, 1.0));
 
             my_shader.setUniform("pointLights[" + std::to_string(i) + "].Pposition", plViewPos);
